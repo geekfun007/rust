@@ -1,0 +1,1 @@
+/workspace/shopping-cart/target/debug/shopping-cart: /workspace/shopping-cart/src/cart/cart.rs /workspace/shopping-cart/src/cart/item.rs /workspace/shopping-cart/src/cart/mod.rs /workspace/shopping-cart/src/discount/mod.rs /workspace/shopping-cart/src/lib.rs /workspace/shopping-cart/src/main.rs /workspace/shopping-cart/src/product/mod.rs

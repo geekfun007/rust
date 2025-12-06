@@ -76,7 +76,7 @@ my_project/
 
 ---
 
-## 2. 模块化
+## 2. 模块化系统详解
 
 ### 2.1 模块基础
 
@@ -106,7 +106,7 @@ fn main() {
 }
 ```
 
-### 2.2 文件模块
+### 2.2 文件模块系统
 
 ```rust
 // src/lib.rs 或 src/main.rs
@@ -155,6 +155,548 @@ pub mod outer {
     }
 }
 ```
+
+---
+
+## 2.5 实战：完整的模块化项目示例
+
+### 示例 1：图书管理系统
+
+**项目结构：**
+```
+book_manager/
+├── Cargo.toml
+└── src/
+    ├── main.rs
+    ├── models/
+    │   ├── mod.rs
+    │   ├── book.rs
+    │   └── author.rs
+    ├── services/
+    │   ├── mod.rs
+    │   ├── book_service.rs
+    │   └── author_service.rs
+    └── utils/
+        ├── mod.rs
+        └── validators.rs
+```
+
+**src/main.rs:**
+```rust
+mod models;
+mod services;
+mod utils;
+
+use models::{Book, Author};
+use services::{BookService, AuthorService};
+
+fn main() {
+    // 创建作者
+    let author = Author::new(1, "鲁迅".to_string());
+    
+    // 创建图书
+    let book = Book::new(
+        1,
+        "狂人日记".to_string(),
+        author.id,
+        29.99,
+    );
+    
+    // 使用服务
+    let book_service = BookService::new();
+    book_service.display_book(&book);
+    
+    let author_service = AuthorService::new();
+    author_service.display_author(&author);
+}
+```
+
+**src/models/mod.rs:**
+```rust
+pub mod book;
+pub mod author;
+
+// 重新导出，方便使用
+pub use book::Book;
+pub use author::Author;
+```
+
+**src/models/book.rs:**
+```rust
+use crate::utils::validators;
+
+#[derive(Debug, Clone)]
+pub struct Book {
+    pub id: u32,
+    pub title: String,
+    pub author_id: u32,
+    pub price: f64,
+}
+
+impl Book {
+    pub fn new(id: u32, title: String, author_id: u32, price: f64) -> Self {
+        assert!(validators::validate_price(price), "价格必须为正数");
+        
+        Self {
+            id,
+            title,
+            author_id,
+            price,
+        }
+    }
+    
+    pub fn set_price(&mut self, new_price: f64) {
+        if validators::validate_price(new_price) {
+            self.price = new_price;
+        } else {
+            panic!("无效的价格");
+        }
+    }
+    
+    pub fn apply_discount(&mut self, discount: f64) {
+        assert!(discount >= 0.0 && discount <= 1.0, "折扣必须在 0-1 之间");
+        self.price = self.price * (1.0 - discount);
+    }
+}
+```
+
+**src/models/author.rs:**
+```rust
+#[derive(Debug, Clone)]
+pub struct Author {
+    pub id: u32,
+    pub name: String,
+}
+
+impl Author {
+    pub fn new(id: u32, name: String) -> Self {
+        assert!(!name.is_empty(), "作者名不能为空");
+        
+        Self { id, name }
+    }
+}
+```
+
+**src/services/mod.rs:**
+```rust
+pub mod book_service;
+pub mod author_service;
+
+pub use book_service::BookService;
+pub use author_service::AuthorService;
+```
+
+**src/services/book_service.rs:**
+```rust
+use crate::models::Book;
+
+pub struct BookService {
+    // 可以添加数据库连接等字段
+}
+
+impl BookService {
+    pub fn new() -> Self {
+        Self {}
+    }
+    
+    pub fn display_book(&self, book: &Book) {
+        println!("=== 图书信息 ===");
+        println!("ID: {}", book.id);
+        println!("标题: {}", book.title);
+        println!("作者ID: {}", book.author_id);
+        println!("价格: ¥{:.2}", book.price);
+    }
+    
+    pub fn calculate_total(&self, books: &[Book]) -> f64 {
+        books.iter().map(|b| b.price).sum()
+    }
+}
+
+impl Default for BookService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+```
+
+**src/services/author_service.rs:**
+```rust
+use crate::models::Author;
+
+pub struct AuthorService;
+
+impl AuthorService {
+    pub fn new() -> Self {
+        Self
+    }
+    
+    pub fn display_author(&self, author: &Author) {
+        println!("=== 作者信息 ===");
+        println!("ID: {}", author.id);
+        println!("姓名: {}", author.name);
+    }
+}
+```
+
+**src/utils/mod.rs:**
+```rust
+pub mod validators;
+
+// 可以直接在这里定义一些工具函数
+pub fn format_price(price: f64) -> String {
+    format!("¥{:.2}", price)
+}
+```
+
+**src/utils/validators.rs:**
+```rust
+pub fn validate_price(price: f64) -> bool {
+    price > 0.0
+}
+
+pub fn validate_name(name: &str) -> bool {
+    !name.is_empty() && name.len() <= 100
+}
+```
+
+---
+
+### 示例 2：用户认证系统
+
+**项目结构：**
+```
+auth_system/
+├── Cargo.toml
+└── src/
+    ├── main.rs
+    ├── lib.rs
+    ├── auth/
+    │   ├── mod.rs
+    │   ├── login.rs
+    │   ├── register.rs
+    │   └── password.rs
+    ├── models/
+    │   ├── mod.rs
+    │   └── user.rs
+    └── config/
+        ├── mod.rs
+        └── database.rs
+```
+
+**src/lib.rs:**
+```rust
+pub mod auth;
+pub mod models;
+pub mod config;
+
+// 导出常用类型
+pub use models::User;
+pub use auth::{login, register, change_password};
+```
+
+**src/auth/mod.rs:**
+```rust
+mod login;
+mod register;
+mod password;
+
+// 重新导出主要功能
+pub use login::login;
+pub use register::register;
+pub use password::change_password;
+
+// 内部使用的辅助函数
+pub(crate) fn hash_password(password: &str) -> String {
+    // 简化示例，实际应使用 bcrypt 等
+    format!("hashed_{}", password)
+}
+
+pub(crate) fn verify_password(password: &str, hash: &str) -> bool {
+    hash == format!("hashed_{}", password)
+}
+```
+
+**src/auth/login.rs:**
+```rust
+use crate::models::User;
+use super::{verify_password};
+
+pub fn login(username: &str, password: &str) -> Result<User, String> {
+    // 这里应该从数据库查询用户
+    // 简化示例
+    
+    let user = User {
+        id: 1,
+        username: username.to_string(),
+        password_hash: super::hash_password("correct_password"),
+    };
+    
+    if verify_password(password, &user.password_hash) {
+        Ok(user)
+    } else {
+        Err("密码错误".to_string())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_login_success() {
+        let result = login("alice", "correct_password");
+        assert!(result.is_ok());
+    }
+    
+    #[test]
+    fn test_login_failure() {
+        let result = login("alice", "wrong_password");
+        assert!(result.is_err());
+    }
+}
+```
+
+**src/auth/register.rs:**
+```rust
+use crate::models::User;
+use super::hash_password;
+
+pub fn register(username: &str, password: &str) -> Result<User, String> {
+    // 验证用户名
+    if username.len() < 3 {
+        return Err("用户名至少 3 个字符".to_string());
+    }
+    
+    // 验证密码
+    if password.len() < 8 {
+        return Err("密码至少 8 个字符".to_string());
+    }
+    
+    // 创建用户
+    let user = User {
+        id: generate_user_id(),
+        username: username.to_string(),
+        password_hash: hash_password(password),
+    };
+    
+    Ok(user)
+}
+
+fn generate_user_id() -> u32 {
+    // 简化示例
+    1
+}
+```
+
+**src/auth/password.rs:**
+```rust
+use crate::models::User;
+use super::{hash_password, verify_password};
+
+pub fn change_password(
+    user: &mut User,
+    old_password: &str,
+    new_password: &str,
+) -> Result<(), String> {
+    // 验证旧密码
+    if !verify_password(old_password, &user.password_hash) {
+        return Err("旧密码错误".to_string());
+    }
+    
+    // 验证新密码
+    if new_password.len() < 8 {
+        return Err("新密码至少 8 个字符".to_string());
+    }
+    
+    // 更新密码
+    user.password_hash = hash_password(new_password);
+    
+    Ok(())
+}
+```
+
+**src/models/mod.rs:**
+```rust
+mod user;
+
+pub use user::User;
+```
+
+**src/models/user.rs:**
+```rust
+#[derive(Debug, Clone)]
+pub struct User {
+    pub id: u32,
+    pub username: String,
+    pub(crate) password_hash: String,  // 只在 crate 内可见
+}
+
+impl User {
+    pub fn new(id: u32, username: String, password_hash: String) -> Self {
+        Self {
+            id,
+            username,
+            password_hash,
+        }
+    }
+    
+    pub fn display(&self) {
+        println!("用户 ID: {}", self.id);
+        println!("用户名: {}", self.username);
+        // 不显示密码哈希
+    }
+}
+```
+
+**src/main.rs:**
+```rust
+use auth_system::{register, login, change_password};
+
+fn main() {
+    println!("=== 用户认证系统 ===\n");
+    
+    // 注册用户
+    match register("alice", "password123") {
+        Ok(user) => {
+            println!("注册成功！");
+            user.display();
+        }
+        Err(e) => println!("注册失败: {}", e),
+    }
+    
+    println!();
+    
+    // 登录
+    match login("alice", "correct_password") {
+        Ok(user) => {
+            println!("登录成功！");
+            user.display();
+        }
+        Err(e) => println!("登录失败: {}", e),
+    }
+    
+    println!();
+    
+    // 修改密码
+    let mut user = register("bob", "oldpassword123").unwrap();
+    match change_password(&mut user, "oldpassword123", "newpassword456") {
+        Ok(_) => println!("密码修改成功！"),
+        Err(e) => println!("密码修改失败: {}", e),
+    }
+}
+```
+
+---
+
+### 示例 3：电商购物车系统
+
+**项目结构：**
+```
+shopping_cart/
+├── Cargo.toml
+└── src/
+    ├── main.rs
+    ├── cart/
+    │   ├── mod.rs
+    │   ├── cart.rs
+    │   └── item.rs
+    ├── product/
+    │   ├── mod.rs
+    │   └── product.rs
+    └── discount/
+        ├── mod.rs
+        └── calculator.rs
+```
+
+**完整实现（关键文件）：**
+
+**src/cart/mod.rs:**
+```rust
+mod cart;
+mod item;
+
+pub use cart::Cart;
+pub use item::CartItem;
+```
+
+**src/cart/cart.rs:**
+```rust
+use crate::product::Product;
+use crate::discount::DiscountCalculator;
+use super::CartItem;
+
+pub struct Cart {
+    items: Vec<CartItem>,
+    discount_calculator: DiscountCalculator,
+}
+
+impl Cart {
+    pub fn new() -> Self {
+        Self {
+            items: Vec::new(),
+            discount_calculator: DiscountCalculator::new(),
+        }
+    }
+    
+    pub fn add_item(&mut self, product: Product, quantity: u32) {
+        if let Some(item) = self.items.iter_mut().find(|i| i.product.id == product.id) {
+            item.quantity += quantity;
+        } else {
+            self.items.push(CartItem::new(product, quantity));
+        }
+    }
+    
+    pub fn remove_item(&mut self, product_id: u32) {
+        self.items.retain(|item| item.product.id != product_id);
+    }
+    
+    pub fn subtotal(&self) -> f64 {
+        self.items.iter()
+            .map(|item| item.product.price * item.quantity as f64)
+            .sum()
+    }
+    
+    pub fn total(&self) -> f64 {
+        let subtotal = self.subtotal();
+        self.discount_calculator.apply_discount(subtotal, self.items.len())
+    }
+    
+    pub fn display(&self) {
+        println!("=== 购物车 ===");
+        for item in &self.items {
+            println!("{} x {} = ¥{:.2}", 
+                item.product.name,
+                item.quantity,
+                item.product.price * item.quantity as f64
+            );
+        }
+        println!("小计: ¥{:.2}", self.subtotal());
+        println!("总计: ¥{:.2}", self.total());
+    }
+}
+```
+
+**src/cart/item.rs:**
+```rust
+use crate::product::Product;
+
+pub struct CartItem {
+    pub product: Product,
+    pub quantity: u32,
+}
+
+impl CartItem {
+    pub fn new(product: Product, quantity: u32) -> Self {
+        Self { product, quantity }
+    }
+}
+```
+
+这些模块化示例展示了：
+- ✅ 清晰的项目结构
+- ✅ 模块的可见性控制
+- ✅ 代码的组织和重用
+- ✅ 实际项目的模块化实践
 
 ---
 
@@ -227,7 +769,7 @@ pub fn add(a: i32, b: i32) -> i32 {
 
 ---
 
-## 4. 数据类型
+## 4. 数据类型与常用方法
 
 ### 4.1 标量类型
 
@@ -257,6 +799,101 @@ fn main() {
 }
 ```
 
+### 4.1.1 整数类型常用方法
+
+```rust
+fn integer_methods() {
+    let num: i32 = 42;
+    
+    // 数学运算
+    println!("绝对值: {}", num.abs());                    // 42
+    println!("幂运算: {}", num.pow(2));                   // 1764
+    println!("是否为正: {}", num.is_positive());          // true
+    
+    // 安全运算（避免溢出）
+    let result = num.checked_add(100);                    // Some(142)
+    let wrapped = num.wrapping_add(i32::MAX);             // 溢出后环绕
+    let saturated = num.saturating_add(i32::MAX);         // 饱和到最大值
+    
+    // 位操作
+    println!("前导零: {}", num.leading_zeros());          // 26
+    println!("尾随零: {}", num.trailing_zeros());         // 1
+    println!("位数: {}", num.count_ones());               // 3
+    
+    // 类型转换
+    let as_u32: u32 = num as u32;
+    let as_f64: f64 = num as f64;
+    
+    // 字节数组转换
+    let bytes = num.to_be_bytes();                        // 大端序
+    let from_bytes = i32::from_be_bytes([0, 0, 0, 42]);
+    
+    // 范围
+    println!("最小值: {}", i32::MIN);                     // -2147483648
+    println!("最大值: {}", i32::MAX);                     // 2147483647
+}
+```
+
+### 4.1.2 浮点类型常用方法
+
+```rust
+fn float_methods() {
+    let x: f64 = 3.14159;
+    
+    // 舍入方法
+    println!("向下取整: {}", x.floor());                  // 3.0
+    println!("向上取整: {}", x.ceil());                   // 4.0
+    println!("四舍五入: {}", x.round());                  // 3.0
+    println!("取整数部分: {}", x.trunc());                // 3.0
+    println!("小数部分: {}", x.fract());                  // 0.14159
+    
+    // 数学函数
+    println!("绝对值: {}", x.abs());
+    println!("平方根: {}", x.sqrt());
+    println!("立方根: {}", x.cbrt());
+    println!("指数: {}", x.exp());
+    println!("对数: {}", x.ln());
+    println!("幂运算: {}", x.powf(2.0));
+    
+    // 三角函数
+    use std::f64::consts::PI;
+    let angle = PI / 4.0;
+    println!("sin: {}", angle.sin());
+    println!("cos: {}", angle.cos());
+    println!("tan: {}", angle.tan());
+    
+    // 检查方法
+    println!("是否为 NaN: {}", x.is_nan());
+    println!("是否有限: {}", x.is_finite());
+    println!("是否无限: {}", x.is_infinite());
+    
+    // 比较
+    let y = 3.14;
+    println!("最大值: {}", x.max(y));
+    println!("最小值: {}", x.min(y));
+    println!("限制范围: {}", x.clamp(0.0, 3.0));
+}
+```
+
+### 4.1.3 布尔类型方法
+
+```rust
+fn bool_methods() {
+    let flag = true;
+    
+    // then 方法（条件执行）
+    let result = flag.then(|| "这是真的");
+    println!("{:?}", result);  // Some("这是真的")
+    
+    let result = false.then(|| "这不会执行");
+    println!("{:?}", result);  // None
+    
+    // then_some 方法
+    let value = flag.then_some(42);
+    println!("{:?}", value);  // Some(42)
+}
+```
+
 ### 4.2 复合类型
 
 ```rust
@@ -276,7 +913,7 @@ fn main() {
 }
 ```
 
-### 4.3 字符串类型
+### 4.3 字符串类型与方法
 
 ```rust
 fn main() {
@@ -310,7 +947,131 @@ fn main() {
 }
 ```
 
-### 4.4 集合类型
+### 4.3.1 String 常用方法大全
+
+```rust
+fn string_methods() {
+    let mut s = String::from("Hello, Rust!");
+    
+    // 创建方法
+    let s1 = String::new();                                // 空字符串
+    let s2 = String::from("hello");                        // 从 &str
+    let s3 = "hello".to_string();                          // to_string
+    let s4 = String::with_capacity(10);                    // 预分配容量
+    
+    // 追加方法
+    s.push_str(", world");                                 // 追加字符串
+    s.push('!');                                           // 追加字符
+    
+    // 插入方法
+    s.insert(0, 'X');                                      // 插入字符
+    s.insert_str(1, "YZ");                                 // 插入字符串
+    
+    // 删除方法
+    s.pop();                                               // 删除最后一个字符
+    s.remove(0);                                           // 删除指定位置
+    s.truncate(5);                                         // 截断到指定长度
+    s.clear();                                             // 清空
+    
+    s = String::from("Hello, World!");
+    
+    // 替换方法
+    let s5 = s.replace("World", "Rust");                   // 替换所有
+    let s6 = s.replacen("l", "L", 2);                      // 替换前 n 个
+    
+    // 查询方法
+    println!("长度: {}", s.len());                          // 字节长度
+    println!("容量: {}", s.capacity());                     // 容量
+    println!("是否为空: {}", s.is_empty());                // 是否为空
+    println!("包含: {}", s.contains("World"));             // 是否包含
+    println!("开头: {}", s.starts_with("Hello"));          // 是否开头
+    println!("结尾: {}", s.ends_with("!"));                // 是否结尾
+    
+    // 查找方法
+    if let Some(index) = s.find("World") {                // 查找位置
+        println!("找到位置: {}", index);
+    }
+    
+    // 分割方法
+    for word in s.split(',') {                             // 按字符分割
+        println!("单词: {}", word.trim());
+    }
+    
+    let parts: Vec<&str> = s.split_whitespace().collect(); // 按空白分割
+    let lines: Vec<&str> = "a\nb\nc".lines().collect();   // 按行分割
+    
+    // 大小写转换
+    println!("大写: {}", s.to_uppercase());                 // 转大写
+    println!("小写: {}", s.to_lowercase());                 // 转小写
+    
+    // 修剪
+    let s7 = "  Hello  ".trim();                           // 两端空白
+    let s8 = "  Hello  ".trim_start();                     // 开头空白
+    let s9 = "  Hello  ".trim_end();                       // 结尾空白
+    let s10 = "***Hello***".trim_matches('*');             // 指定字符
+    
+    // 重复
+    let repeated = "ab".repeat(3);                         // "ababab"
+    
+    // 解析
+    let number: Result<i32, _> = "42".parse();             // 解析为数字
+    
+    // 字节操作
+    let bytes = s.as_bytes();                              // 转字节数组
+    let s_from_bytes = String::from_utf8(bytes.to_vec()); // 从字节创建
+    
+    // 容量管理
+    s.reserve(100);                                        // 预留容量
+    s.shrink_to_fit();                                     // 收缩到实际大小
+}
+```
+
+### 4.3.2 &str 常用方法
+
+```rust
+fn str_methods() {
+    let s: &str = "Hello, Rust World!";
+    
+    // 切片操作
+    let hello = &s[0..5];                                  // "Hello"
+    let world = &s[7..11];                                 // "Rust"
+    
+    // 字符迭代
+    for c in s.chars() {                                   // 字符迭代器
+        println!("字符: {}", c);
+    }
+    
+    // 字节迭代
+    for b in s.bytes() {                                   // 字节迭代器
+        println!("字节: {}", b);
+    }
+    
+    // 字符索引迭代
+    for (i, c) in s.char_indices() {                       // 位置和字符
+        println!("位置 {}: {}", i, c);
+    }
+    
+    // 分割
+    let words: Vec<&str> = s.split_whitespace().collect(); // 按空白分割
+    let parts: Vec<&str> = s.split(',').collect();        // 按字符分割
+    let lines: Vec<&str> = s.lines().collect();           // 按行分割
+    
+    // 模式匹配
+    let matches: Vec<&str> = s.matches("o").collect();    // 找所有匹配
+    let count = s.matches("o").count();                    // 计数
+    
+    // 检查方法
+    println!("是否为空: {}", s.is_empty());
+    println!("是否为 ASCII: {}", s.is_ascii());
+    println!("包含: {}", s.contains("Rust"));
+    
+    // 转换
+    let owned: String = s.to_owned();                      // 转 String
+    let upper = s.to_uppercase();                          // 转大写
+    let lower = s.to_lowercase();                          // 转小写
+}
+
+### 4.4 集合类型与方法
 
 ```rust
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -354,6 +1115,243 @@ fn main() {
     let mut deque = VecDeque::new();
     deque.push_back(1);
     deque.push_front(0);
+}
+```
+
+### 4.4.1 Vec<T> 常用方法详解
+
+```rust
+fn vec_methods() {
+    // 创建方法
+    let mut v1: Vec<i32> = Vec::new();                     // 空 Vec
+    let v2 = vec![1, 2, 3];                                // 宏创建
+    let v3 = Vec::with_capacity(10);                       // 预分配容量
+    let v4 = vec![0; 5];                                   // [0, 0, 0, 0, 0]
+    
+    // 添加元素
+    v1.push(1);                                            // 尾部添加
+    v1.push(2);
+    v1.extend([3, 4, 5]);                                  // 扩展
+    v1.extend_from_slice(&[6, 7, 8]);                     // 从切片扩展
+    
+    // 插入元素
+    v1.insert(0, 100);                                     // 指定位置插入
+    
+    // 删除元素
+    v1.pop();                                              // 删除最后一个
+    v1.remove(0);                                          // 删除指定索引
+    v1.swap_remove(0);                                     // 快速删除（不保序）
+    v1.truncate(5);                                        // 截断到指定长度
+    v1.clear();                                            // 清空
+    
+    v1 = vec![1, 2, 3, 4, 5];
+    
+    // 访问元素
+    let first = &v1[0];                                    // 索引访问
+    let second = v1.get(1);                                // 安全访问 Option
+    let last = v1.last();                                  // 最后一个元素
+    let first_mut = v1.first_mut();                        // 可变引用
+    
+    // 切片
+    let slice = &v1[1..4];                                 // [2, 3, 4]
+    let (left, right) = v1.split_at(3);                    // 分割
+    
+    // 迭代
+    for item in &v1 {                                      // 不可变迭代
+        println!("{}", item);
+    }
+    
+    for item in &mut v1 {                                  // 可变迭代
+        *item *= 2;
+    }
+    
+    for item in v1.clone() {                               // 消耗迭代
+        println!("{}", item);
+    }
+    
+    // 容量管理
+    println!("长度: {}", v1.len());
+    println!("容量: {}", v1.capacity());
+    println!("是否为空: {}", v1.is_empty());
+    
+    v1.reserve(100);                                       // 预留容量
+    v1.shrink_to_fit();                                    // 收缩容量
+    
+    // 排序
+    v1.sort();                                             // 升序排序
+    v1.sort_by(|a, b| b.cmp(a));                          // 降序排序
+    v1.sort_unstable();                                    // 不稳定排序（更快）
+    
+    // 去重
+    v1.dedup();                                            // 删除连续重复
+    
+    // 反转
+    v1.reverse();                                          // 反转
+    
+    // 旋转
+    v1.rotate_left(2);                                     // 左旋
+    v1.rotate_right(1);                                    // 右旋
+    
+    // 分割
+    let chunks: Vec<&[i32]> = v1.chunks(2).collect();     // 分块
+    let windows: Vec<&[i32]> = v1.windows(3).collect();   // 滑动窗口
+    
+    // 查找
+    println!("包含 3: {}", v1.contains(&3));
+    if let Some(pos) = v1.iter().position(|&x| x == 3) {
+        println!("找到位置: {}", pos);
+    }
+    
+    // 保留
+    v1.retain(|&x| x > 2);                                 // 只保留 > 2
+    
+    // 填充和交换
+    v1.fill(0);                                            // 全部填充为 0
+    v1.swap(0, 1);                                         // 交换两个元素
+    
+    // 转换
+    let doubled: Vec<i32> = v1.iter().map(|x| x * 2).collect();
+    let filtered: Vec<i32> = v1.iter()
+        .filter(|&&x| x > 2)
+        .copied()
+        .collect();
+}
+```
+
+### 4.4.2 HashMap<K, V> 常用方法
+
+```rust
+use std::collections::HashMap;
+
+fn hashmap_methods() {
+    // 创建
+    let mut map = HashMap::new();
+    map.insert("key1".to_string(), 100);
+    map.insert("key2".to_string(), 200);
+    
+    // 从迭代器创建
+    let tuples = vec![("a", 1), ("b", 2)];
+    let map2: HashMap<_, _> = tuples.into_iter().collect();
+    
+    // 预分配容量
+    let mut map3 = HashMap::with_capacity(10);
+    
+    // 插入和更新
+    map.insert("key3".to_string(), 300);                   // 插入或更新
+    
+    // entry API（推荐）
+    map.entry("key1".to_string())
+        .and_modify(|v| *v += 10)                          // 如果存在则修改
+        .or_insert(50);                                    // 否则插入
+    
+    map.entry("key4".to_string())
+        .or_insert(400);                                   // 不存在时插入
+    
+    map.entry("key5".to_string())
+        .or_insert_with(|| expensive_fn());                // 懒加载
+    
+    // 获取值
+    let value = map.get("key1");                           // Option<&V>
+    let value_mut = map.get_mut("key1");                   // Option<&mut V>
+    let value_or = map.get("nonexistent")
+        .unwrap_or(&0);                                    // 提供默认值
+    
+    // 删除
+    map.remove("key1");                                    // 返回 Option<V>
+    let (k, v) = map.remove_entry("key2").unwrap();        // 返回键值对
+    
+    // 检查
+    println!("包含键: {}", map.contains_key("key1"));
+    println!("长度: {}", map.len());
+    println!("是否为空: {}", map.is_empty());
+    
+    // 迭代
+    for (key, value) in &map {                             // 不可变迭代
+        println!("{}: {}", key, value);
+    }
+    
+    for key in map.keys() {                                // 遍历键
+        println!("键: {}", key);
+    }
+    
+    for value in map.values() {                            // 遍历值
+        println!("值: {}", value);
+    }
+    
+    for value in map.values_mut() {                        // 可变遍历值
+        *value *= 2;
+    }
+    
+    // 保留
+    map.retain(|_k, &mut v| v > 100);                      // 保留满足条件
+    
+    // 清空
+    map.clear();
+}
+
+fn expensive_fn() -> i32 {
+    500
+}
+```
+
+### 4.4.3 HashSet<T> 常用方法
+
+```rust
+use std::collections::HashSet;
+
+fn hashset_methods() {
+    let mut set1: HashSet<i32> = HashSet::new();
+    let set2: HashSet<i32> = [1, 2, 3, 4, 5].iter().cloned().collect();
+    
+    // 插入
+    set1.insert(1);
+    set1.insert(2);
+    set1.insert(3);
+    
+    // 删除
+    set1.remove(&2);
+    
+    // 检查
+    println!("包含 1: {}", set1.contains(&1));
+    println!("长度: {}", set1.len());
+    println!("是否为空: {}", set1.is_empty());
+    
+    // 集合操作
+    let set3: HashSet<_> = [3, 4, 5, 6].iter().cloned().collect();
+    
+    // 并集
+    let union: HashSet<_> = set1.union(&set3).cloned().collect();
+    
+    // 交集
+    let intersection: HashSet<_> = set1.intersection(&set3)
+        .cloned()
+        .collect();
+    
+    // 差集
+    let difference: HashSet<_> = set1.difference(&set3)
+        .cloned()
+        .collect();
+    
+    // 对称差集
+    let symmetric_diff: HashSet<_> = set1.symmetric_difference(&set3)
+        .cloned()
+        .collect();
+    
+    // 子集和超集
+    println!("是子集: {}", set1.is_subset(&set2));
+    println!("是超集: {}", set1.is_superset(&set2));
+    println!("不相交: {}", set1.is_disjoint(&set3));
+    
+    // 迭代
+    for item in &set1 {
+        println!("{}", item);
+    }
+    
+    // 保留
+    set1.retain(|&x| x > 1);
+    
+    // 清空
+    set1.clear();
 }
 ```
 
