@@ -1,0 +1,54 @@
+[package]
+name = "rust-http-api-demo"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# 异步运行时
+tokio = { version = "1.35", features = ["full"] }
+
+# HTTP 服务器框架
+axum = "0.7"
+
+# 序列化/反序列化
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# ORM - SQLx（支持异步和编译时检查）
+sqlx = { version = "0.7", features = [
+    "runtime-tokio",
+    "sqlite",
+    "macros",
+    "migrate",
+    "chrono",
+] }
+
+# 时间处理
+chrono = { version = "0.4", features = ["serde"] }
+
+# 环境变量
+dotenv = "0.15"
+
+# 日志
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# HTTP 客户端
+reqwest = { version = "0.11", features = ["json"] }
+
+# 错误处理
+anyhow = "1.0"
+thiserror = "1.0"
+
+# UUID
+uuid = { version = "1.6", features = ["serde", "v4"] }
+
+# Tower HTTP 中间件
+tower-http = { version = "0.5", features = ["cors"] }
+
+# Futures
+futures = "0.3"
+
+[dev-dependencies]
+# 测试
+tokio-test = "0.4"

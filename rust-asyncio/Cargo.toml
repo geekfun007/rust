@@ -1,0 +1,39 @@
+[package]
+name = "rust-asyncio"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# 异步运行时基础
+futures = "0.3"
+
+# 时间相关
+crossbeam = "0.8"
+
+# 并发数据结构
+parking_lot = "0.12"
+
+# 系统调用
+mio = { version = "0.8", features = ["os-poll", "net"] }
+
+# 工具
+pin-project = "1.1"
+
+[dev-dependencies]
+tokio = { version = "1.35", features = ["full"] }
+
+[[example]]
+name = "simple_task"
+path = "examples/simple_task.rs"
+
+[[example]]
+name = "echo_server"
+path = "examples/echo_server.rs"
+
+[[example]]
+name = "parallel_tasks"
+path = "examples/parallel_tasks.rs"
+
+[[example]]
+name = "python_like"
+path = "examples/python_like.rs"
