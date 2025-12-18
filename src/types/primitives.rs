@@ -171,12 +171,12 @@ pub fn float_precision_demo() {
     println!("\n=== 浮点数精度问题 ===");
     
     // 浮点数不精确
-    let x = 0.1 + 0.2;
+    let x: f64 = 0.1 + 0.2;
     println!("0.1 + 0.2 = {}", x);
     println!("0.1 + 0.2 == 0.3: {}", x == 0.3);  // false!
     
     // 比较浮点数应该使用误差范围
-    let epsilon = 1e-10;
+    let epsilon: f64 = 1e-10;
     let is_close = (x - 0.3).abs() < epsilon;
     println!("是否接近 0.3: {}", is_close);
     

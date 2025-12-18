@@ -157,7 +157,7 @@ pub fn http_server_basics_demo() {
     println!("  let response = format!(");
     println!("      \"HTTP/1.1 200 OK\\r\\n\"");
     println!("      \"Content-Type: text/html\\r\\n\"");
-    println!("      \"Content-Length: {}\\r\\n\"");
+    println!("      \"Content-Length: {{}}\\r\\n\"");
     println!("      \"\\r\\n\"");
     println!("      \"{{}}\",");
     println!("      body.len(),");

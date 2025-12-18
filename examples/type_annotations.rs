@@ -62,7 +62,7 @@ fn when_to_annotate_demo() {
     // let v = Vec::new();  // 如果不使用，编译器无法推断 T
     
     // ✅ 解决方案：声明类型
-    let v: Vec<String> = Vec::new();
+    let _v: Vec<String> = Vec::new();
     println!("\n3️⃣ 空容器: Vec<String> (空)");
     
     // ❌ 情况4：parse 等方法有多种返回类型

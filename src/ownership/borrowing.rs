@@ -8,7 +8,7 @@ pub fn borrowing_rules_demo() {
     println!("\n=== 借用规则 ===");
     
     println!("规则 1: 要么一个可变引用，要么多个不可变引用");
-    let mut s = String::from("hello");
+    let s = String::from("hello");
     
     let r1 = &s;  // 不可变引用
     let r2 = &s;  // 可以有多个不可变引用
@@ -81,21 +81,23 @@ pub fn mixed_references_demo() {
     
     let mut s = String::from("hello");
     
-    let r1 = &s;  // 不可变引用
-    let r2 = &s;  // 不可变引用
-    println!("不可变引用: {}, {}", r1, r2);
-    // r1 和 r2 的作用域结束
+    {
+        let r1 = &s;  // 不可变引用
+        let r2 = &s;  // 不可变引用
+        println!("不可变引用: {}, {}", r1, r2);
+        // r1 和 r2 的作用域结束
+    }
     
     let r3 = &mut s;  // 可变引用
     r3.push_str(" world");
     println!("可变引用: {}", r3);
     
     // 注意：不能在不可变引用存在时创建可变引用
-    let mut s = String::from("hello");
-    let r1 = &s;
-    // let r2 = &mut s;  // 错误！
-    // println!("{}, {}", r1, r2);
-    println!("不可变引用: {}", r1);
+    let s2 = String::from("hello");
+    let _r1 = &s2;
+    // let r2 = &mut s2;  // 错误！
+    // println!("{}, {}", _r1, r2);
+    println!("示例说明：不可变与可变引用不能同时存在");
 }
 
 /// # 引用的作用域
@@ -175,7 +177,7 @@ pub fn borrowing_with_functions_demo() {
     println!("原字符串仍可用: {}", s);
     
     // 借用检查器防止错误
-    let mut s = String::from("hello world");
+    let s = String::from("hello world");
     let word = first_word(&s);
     // s.clear();  // 错误！不能在有不可变借用时修改
     println!("单词: {}", word);
@@ -312,7 +314,7 @@ pub fn borrowing_performance_demo() {
     }
     
     println!("  借用: {} 字节（指针大小）", std::mem::size_of::<&Vec<i32>>());
-    let len = process_borrow(&large_vec);
+    let _len = process_borrow(&large_vec);
     
     // 克隆：复制整个 Vec（昂贵）
     println!("  克隆: 复制 {} 个元素", large_vec.len());

@@ -205,6 +205,31 @@ thiserror = "1.0"                                   # 错误派生宏
 
 MIT License
 
+## 文档索引
+
+### 核心文档
+- 📘 [核心底层原理详解](docs/CORE_PRINCIPLES.md) - 深入理解 ownership/borrowing/slice/lifetime
+- 📋 [快速参考手册](docs/QUICK_REFERENCE.md) - 常用概念和语法速查
+- 🎨 [可视化指南](docs/VISUAL_GUIDE.md) - 内存布局和概念图示
+- 🗺️ [学习路径](docs/LEARNING_PATH.md) - 推荐的学习顺序
+- 📝 [类型标注指南](docs/TYPE_ANNOTATIONS_GUIDE.md) - let 类型声明与泛型
+- 🎯 [类型标注速查卡](docs/TYPE_ANNOTATIONS_CHEATSHEET.md) - 快速决策参考
+
+### 示例程序
+```bash
+# 内存布局与底层原理
+cargo run --example memory_layout
+
+# 借用检查器演示
+cargo run --example borrow_checker
+
+# 生命周期深度剖析
+cargo run --example lifetime_deep_dive
+
+# 类型标注与泛型
+cargo run --example type_annotations
+```
+
 ## 专题示例
 
 除了主教程外，还提供了以下专题示例：
@@ -227,3 +252,56 @@ cat docs/TYPE_ANNOTATIONS_GUIDE.md
 - Turbofish 语法 `::<T>` 详解
 - 复杂泛型场景（生命周期、trait 约束）
 - 实战最佳实践
+
+### 核心底层原理深度剖析
+
+深入理解 Rust 的核心概念和底层实现：
+
+```bash
+# 查看底层原理详解文档
+cat docs/CORE_PRINCIPLES.md
+
+# 运行内存布局演示
+cargo run --example memory_layout
+
+# 运行借用检查器演示
+cargo run --example borrow_checker
+
+# 运行生命周期深度演示
+cargo run --example lifetime_deep_dive
+```
+
+**涵盖内容：**
+
+#### 1. 所有权 (Ownership)
+- 栈与堆的内存布局
+- Move vs Copy vs Clone 的底层实现
+- Drop trait 与 RAII 机制
+- 零成本抽象的实现原理
+
+#### 2. 借用 (Borrowing)
+- 引用的内存表示（瘦指针 vs 胖指针）
+- 借用检查器的工作原理
+- 非词法作用域生命周期 (NLL)
+- 内部可变性 (RefCell/Cell)
+- 分割借用
+
+#### 3. 切片 (Slice)
+- 切片的胖指针结构（ptr + len）
+- 字符串切片 vs 数组切片
+- 动态大小类型 (DST)
+- 零成本抽象验证
+
+#### 4. 生命周期 (Lifetime)
+- 生命周期的编译时本质
+- 生命周期消除规则（三大规则）
+- 结构体中的生命周期
+- 生命周期约束与子类型化
+- 'static 生命周期
+- 高阶 trait 约束 (HRTB)
+
+#### 5. 性能分析
+- 类型大小与内存对齐
+- 引用 vs 克隆的性能对比
+- 迭代器零成本抽象
+- 编译器优化（内联、SIMD）
