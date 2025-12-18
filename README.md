@@ -204,3 +204,26 @@ thiserror = "1.0"                                   # 错误派生宏
 ## 许可证
 
 MIT License
+
+## 专题示例
+
+除了主教程外，还提供了以下专题示例：
+
+### 类型标注与泛型
+详细说明 let 何时需要类型声明，以及泛型类型如何使用：
+
+```bash
+# 运行类型标注示例
+cargo run --example type_annotations
+
+# 查看详细文档
+cat docs/TYPE_ANNOTATIONS_GUIDE.md
+```
+
+**涵盖内容：**
+- let 变量何时需要类型标注
+- 编译器类型推断规则
+- 泛型类型声明（结构体、枚举、函数）
+- Turbofish 语法 `::<T>` 详解
+- 复杂泛型场景（生命周期、trait 约束）
+- 实战最佳实践
