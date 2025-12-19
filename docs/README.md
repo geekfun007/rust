@@ -55,6 +55,18 @@
    - 常用方法速查
    - 决策树
 
+5. **[迭代器详解](ITERATOR_GUIDE.md)** ⭐ 最新
+   - Iterator trait 核心
+   - for 循环底层原理
+   - 消费器与适配器方法
+   - 自定义迭代器
+   - 性能分析与实战
+
+6. **[迭代器速查卡](ITERATOR_CHEATSHEET.md)** ⭐ 最新
+   - 常用方法速查
+   - 实用模式
+   - 性能提示
+
 ### 🎮 互动示例
 
 运行这些示例程序来实践学习：
@@ -74,6 +86,9 @@ cargo run --example type_annotations
 
 # 5. 核心类型演示 - Box/Option/Result/Display 等
 cargo run --example core_types
+
+# 6. 迭代器演示 - Iterator/for 循环详解
+cargo run --example iterator_demo
 ```
 
 ### 📝 代码示例
@@ -170,6 +185,7 @@ cargo run --example core_types
 - **生命周期**: [核心原理#4](CORE_PRINCIPLES.md#4-生命周期-lifetime-底层原理) | [示例](../examples/lifetime_deep_dive.rs)
 - **类型标注**: [类型标注指南](TYPE_ANNOTATIONS_GUIDE.md) | [速查卡](TYPE_ANNOTATIONS_CHEATSHEET.md)
 - **核心类型**: [核心类型详解](CORE_TYPES.md) | [速查卡](CORE_TYPES_CHEATSHEET.md)
+- **迭代器**: [迭代器详解](ITERATOR_GUIDE.md) | [速查卡](ITERATOR_CHEATSHEET.md)
 
 ### 按问题查找
 
@@ -186,6 +202,9 @@ cargo run --example core_types
 
 **Q: Box/Option/Result 怎么用？**
 → [核心类型详解](CORE_TYPES.md)
+
+**Q: 迭代器怎么用？map/filter/fold？**
+→ [迭代器详解](ITERATOR_GUIDE.md)
 
 **Q: 如何理解内存布局？**
 → [可视化指南](VISUAL_GUIDE.md#内存布局对比)

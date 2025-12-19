@@ -356,3 +356,64 @@ cargo run --example core_types
 - Clone & Copy（复制）
 - Drop（析构）
 - Iterator（迭代器）
+
+### 迭代器与 for 循环详解
+
+深入理解 Rust 的迭代器系统和 for 循环的底层原理：
+
+```bash
+# 查看迭代器详解文档
+cat docs/ITERATOR_GUIDE.md
+
+# 查看速查卡
+cat docs/ITERATOR_CHEATSHEET.md
+
+# 运行迭代器示例
+cargo run --example iterator_demo
+```
+
+**涵盖内容：**
+
+#### 1. Iterator Trait 核心
+- Iterator 的定义与工作原理
+- 惰性求值（Lazy Evaluation）
+- 内存布局分析
+
+#### 2. for 循环底层
+- for 循环的语法糖展开
+- IntoIterator Trait
+- 三种迭代方式（iter/iter_mut/into_iter）
+
+#### 3. 创建迭代器
+- 从集合创建
+- 范围迭代器
+- 工厂函数
+
+#### 4. 消费器方法
+- 收集（collect、partition）
+- 聚合（sum、product、fold、reduce）
+- 查找（find、any、all、max、min）
+- 计数（count、nth、last）
+
+#### 5. 适配器方法
+- 转换（map、filter_map、flatten）
+- 过滤（filter、take、skip）
+- 组合（chain、zip、enumerate）
+- 其他（cycle、rev、inspect）
+
+#### 6. 自定义迭代器
+- 实现 Iterator trait
+- 实现 IntoIterator
+- 斐波那契、计数器等示例
+
+#### 7. 性能分析
+- 零成本抽象验证
+- 编译器优化
+- 性能最佳实践
+
+#### 8. 实战模式
+- 数据处理管道
+- 分组统计
+- 窗口处理
+- 错误处理
+- 延迟计算
