@@ -79,6 +79,18 @@
    - 常见场景模式
    - 决策树
 
+9. **[函数与闭包详解](FUNCTION_CLOSURE_GUIDE.md)** ⭐ 最新
+   - fn vs ||：完整对比
+   - 闭包捕获模式
+   - 闭包 Trait (Fn/FnMut/FnOnce)
+   - 函数指针与高阶函数
+   - 实战应用场景
+
+10. **[函数闭包速查卡](FUNCTION_CLOSURE_CHEATSHEET.md)** ⭐ 最新
+    - 语法对比速查
+    - 常用模式
+    - 决策树
+
 ### 🎮 互动示例
 
 运行这些示例程序来实践学习：
@@ -104,6 +116,9 @@ cargo run --example iterator_demo
 
 # 7. 引用与解引用演示 - &v/**v 详解
 cargo run --example reference_deref_demo
+
+# 8. 函数与闭包演示 - fn vs || 详解
+cargo run --example function_closure_demo
 ```
 
 ### 📝 代码示例
@@ -202,6 +217,7 @@ cargo run --example reference_deref_demo
 - **核心类型**: [核心类型详解](CORE_TYPES.md) | [速查卡](CORE_TYPES_CHEATSHEET.md)
 - **迭代器**: [迭代器详解](ITERATOR_GUIDE.md) | [速查卡](ITERATOR_CHEATSHEET.md)
 - **引用解引用**: [引用详解](REFERENCE_DEREF_GUIDE.md) | [速查卡](REFERENCE_DEREF_CHEATSHEET.md)
+- **函数与闭包**: [函数闭包详解](FUNCTION_CLOSURE_GUIDE.md) | [速查卡](FUNCTION_CLOSURE_CHEATSHEET.md)
 
 ### 按问题查找
 
@@ -224,6 +240,9 @@ cargo run --example reference_deref_demo
 
 **Q: &v vs &&v vs *v vs **v 有什么区别？**
 → [引用与解引用详解](REFERENCE_DEREF_GUIDE.md)
+
+**Q: 函数和闭包有什么区别？何时使用闭包？**
+→ [函数与闭包详解](FUNCTION_CLOSURE_GUIDE.md)
 
 **Q: 如何理解内存布局？**
 → [可视化指南](VISUAL_GUIDE.md#内存布局对比)
