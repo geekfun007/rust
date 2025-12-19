@@ -43,6 +43,18 @@
    - 一页纸快速参考
    - 决策树和记忆技巧
 
+3. **[核心类型详解](CORE_TYPES.md)** ⭐ 新增
+   - Box<T> 智能指针
+   - Option<T> 可选值
+   - Result<T, E> 错误处理
+   - fmt::Display 格式化输出
+   - 其他核心 Trait
+
+4. **[核心类型速查卡](CORE_TYPES_CHEATSHEET.md)** ⭐ 新增
+   - Box/Option/Result 快速参考
+   - 常用方法速查
+   - 决策树
+
 ### 🎮 互动示例
 
 运行这些示例程序来实践学习：
@@ -59,6 +71,9 @@ cargo run --example lifetime_deep_dive
 
 # 4. 类型标注演示 - 学习何时需要类型声明
 cargo run --example type_annotations
+
+# 5. 核心类型演示 - Box/Option/Result/Display 等
+cargo run --example core_types
 ```
 
 ### 📝 代码示例
@@ -154,6 +169,7 @@ cargo run --example type_annotations
 - **切片**: [核心原理#3](CORE_PRINCIPLES.md#3-切片-slice-底层原理) | [可视化](VISUAL_GUIDE.md#切片内存图)
 - **生命周期**: [核心原理#4](CORE_PRINCIPLES.md#4-生命周期-lifetime-底层原理) | [示例](../examples/lifetime_deep_dive.rs)
 - **类型标注**: [类型标注指南](TYPE_ANNOTATIONS_GUIDE.md) | [速查卡](TYPE_ANNOTATIONS_CHEATSHEET.md)
+- **核心类型**: [核心类型详解](CORE_TYPES.md) | [速查卡](CORE_TYPES_CHEATSHEET.md)
 
 ### 按问题查找
 
@@ -167,6 +183,9 @@ cargo run --example type_annotations
 
 **Q: 什么时候需要类型标注？**
 → [类型标注指南](TYPE_ANNOTATIONS_GUIDE.md)
+
+**Q: Box/Option/Result 怎么用？**
+→ [核心类型详解](CORE_TYPES.md)
 
 **Q: 如何理解内存布局？**
 → [可视化指南](VISUAL_GUIDE.md#内存布局对比)

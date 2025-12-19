@@ -261,6 +261,9 @@ cat docs/TYPE_ANNOTATIONS_GUIDE.md
 # 查看底层原理详解文档
 cat docs/CORE_PRINCIPLES.md
 
+# 查看核心类型详解
+cat docs/CORE_TYPES.md
+
 # 运行内存布局演示
 cargo run --example memory_layout
 
@@ -269,6 +272,9 @@ cargo run --example borrow_checker
 
 # 运行生命周期深度演示
 cargo run --example lifetime_deep_dive
+
+# 运行核心类型演示
+cargo run --example core_types
 ```
 
 **涵盖内容：**
@@ -305,3 +311,48 @@ cargo run --example lifetime_deep_dive
 - 引用 vs 克隆的性能对比
 - 迭代器零成本抽象
 - 编译器优化（内联、SIMD）
+
+### 核心类型与 Trait 详解
+
+深入理解 Rust 的内置类型和常用 trait：
+
+```bash
+# 查看核心类型详解文档
+cat docs/CORE_TYPES.md
+
+# 运行核心类型演示
+cargo run --example core_types
+```
+
+**涵盖内容：**
+
+#### 1. Box<T> - 智能指针
+- 堆内存分配
+- 递归类型支持
+- Trait 对象（动态分派）
+- 性能开销分析
+
+#### 2. Option<T> - 可选值
+- 替代空指针
+- 空指针优化
+- 丰富的组合器方法
+- ? 操作符
+
+#### 3. Result<T, E> - 错误处理
+- 可恢复错误
+- 错误传播链
+- 与 Option 转换
+- 最佳实践
+
+#### 4. fmt::Display - 格式化输出
+- Display vs Debug
+- 自定义格式化
+- format! 宏家族
+- 其他格式化 trait
+
+#### 5. 其他核心 Trait
+- From & Into（类型转换）
+- Default（默认值）
+- Clone & Copy（复制）
+- Drop（析构）
+- Iterator（迭代器）
