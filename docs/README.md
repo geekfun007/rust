@@ -67,6 +67,18 @@
    - 实用模式
    - 性能提示
 
+7. **[引用与解引用详解](REFERENCE_DEREF_GUIDE.md)** ⭐ 最新
+   - &v vs v：引用 vs 值
+   - *v：解引用操作
+   - &&v 和 **v：双重引用与解引用
+   - 模式匹配与迭代器中的引用
+   - Deref Trait 原理
+
+8. **[引用解引用速查卡](REFERENCE_DEREF_CHEATSHEET.md)** ⭐ 最新
+   - 快速语法参考
+   - 常见场景模式
+   - 决策树
+
 ### 🎮 互动示例
 
 运行这些示例程序来实践学习：
@@ -89,6 +101,9 @@ cargo run --example core_types
 
 # 6. 迭代器演示 - Iterator/for 循环详解
 cargo run --example iterator_demo
+
+# 7. 引用与解引用演示 - &v/**v 详解
+cargo run --example reference_deref_demo
 ```
 
 ### 📝 代码示例
@@ -186,6 +201,7 @@ cargo run --example iterator_demo
 - **类型标注**: [类型标注指南](TYPE_ANNOTATIONS_GUIDE.md) | [速查卡](TYPE_ANNOTATIONS_CHEATSHEET.md)
 - **核心类型**: [核心类型详解](CORE_TYPES.md) | [速查卡](CORE_TYPES_CHEATSHEET.md)
 - **迭代器**: [迭代器详解](ITERATOR_GUIDE.md) | [速查卡](ITERATOR_CHEATSHEET.md)
+- **引用解引用**: [引用详解](REFERENCE_DEREF_GUIDE.md) | [速查卡](REFERENCE_DEREF_CHEATSHEET.md)
 
 ### 按问题查找
 
@@ -205,6 +221,9 @@ cargo run --example iterator_demo
 
 **Q: 迭代器怎么用？map/filter/fold？**
 → [迭代器详解](ITERATOR_GUIDE.md)
+
+**Q: &v vs &&v vs *v vs **v 有什么区别？**
+→ [引用与解引用详解](REFERENCE_DEREF_GUIDE.md)
 
 **Q: 如何理解内存布局？**
 → [可视化指南](VISUAL_GUIDE.md#内存布局对比)
