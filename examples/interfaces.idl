@@ -1,0 +1,14 @@
+// Interface definitions
+#include "types.idl"
+
+module Example {
+    interface DataService {
+        StringList getData();
+        void setData(in StringList data);
+    };
+    
+    interface ConfigService {
+        Configuration getConfig();
+        void updateConfig(in Configuration config);
+    };
+};

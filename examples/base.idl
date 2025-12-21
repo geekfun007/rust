@@ -1,0 +1,10 @@
+// Base IDL file with includes
+#include "types.idl"
+#include "interfaces.idl"
+
+module Example {
+    interface MainService {
+        void initialize();
+        string getVersion();
+    };
+};
