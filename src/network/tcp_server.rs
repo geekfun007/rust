@@ -1,244 +1,361 @@
-// TCP 服务器
+// TCP 服务器实现
 
+use std::io::{self, Read, Write, BufRead, BufReader};
 use std::net::{TcpListener, TcpStream};
-use std::io::{Read, Write};
+use std::sync::{Arc, Mutex};
 use std::thread;
+use std::time::Duration;
 
-/// # 基本 TCP 服务器
-pub fn basic_tcp_server_demo() {
-    println!("\n=== 基本 TCP 服务器 ===");
-    
-    println!("TCP 服务器示例代码:");
-    println!("  let listener = TcpListener::bind(\"127.0.0.1:7878\")?;");
-    println!("  for stream in listener.incoming() {{");
-    println!("      let stream = stream?;");
-    println!("      handle_client(stream);");
-    println!("  }}");
-    
-    println!("\n实际运行会阻塞，这里仅展示代码结构");
+/// TCP Echo 服务器
+/// 
+/// 接收客户端发送的数据并原样返回
+pub struct EchoServer {
+    listener: TcpListener,
 }
 
-/// # 处理客户端连接
-pub fn handle_client_demo() {
-    println!("\n=== 处理客户端连接 ===");
+impl EchoServer {
+    /// 创建新的 Echo 服务器
+    pub fn new(addr: &str) -> io::Result<Self> {
+        let listener = TcpListener::bind(addr)?;
+        Ok(EchoServer { listener })
+    }
     
-    println!("处理客户端函数:");
-    println!("  fn handle_client(mut stream: TcpStream) -> io::Result<()> {{");
-    println!("      let mut buffer = [0; 1024];");
-    println!("      let n = stream.read(&mut buffer)?;");
-    println!("      ");
-    println!("      let request = String::from_utf8_lossy(&buffer[..n]);");
-    println!("      println!(\"收到请求: {{}}\", request);");
-    println!("      ");
-    println!("      let response = \"HTTP/1.1 200 OK\\r\\n\\r\\nHello!\";");
-    println!("      stream.write_all(response.as_bytes())?;");
-    println!("      stream.flush()?;");
-    println!("      Ok(())");
-    println!("  }}");
+    /// 启动服务器（单线程版本）
+    pub fn run(&self) -> io::Result<()> {
+        println!("Echo 服务器启动在 {}", self.listener.local_addr()?);
+        
+        for stream in self.listener.incoming() {
+            match stream {
+                Ok(stream) => {
+                    if let Err(e) = Self::handle_client(stream) {
+                        eprintln!("处理客户端错误: {}", e);
+                    }
+                }
+                Err(e) => {
+                    eprintln!("连接错误: {}", e);
+                }
+            }
+        }
+        
+        Ok(())
+    }
+    
+    /// 启动服务器（多线程版本）
+    pub fn run_multithreaded(&self) -> io::Result<()> {
+        println!("多线程 Echo 服务器启动在 {}", self.listener.local_addr()?);
+        
+        for stream in self.listener.incoming() {
+            match stream {
+                Ok(stream) => {
+                    thread::spawn(move || {
+                        if let Err(e) = Self::handle_client(stream) {
+                            eprintln!("处理客户端错误: {}", e);
+                        }
+                    });
+                }
+                Err(e) => {
+                    eprintln!("连接错误: {}", e);
+                }
+            }
+        }
+        
+        Ok(())
+    }
+    
+    /// 处理单个客户端连接
+    fn handle_client(mut stream: TcpStream) -> io::Result<()> {
+        let peer_addr = stream.peer_addr()?;
+        println!("新连接来自: {}", peer_addr);
+        
+        // 设置超时
+        stream.set_read_timeout(Some(Duration::from_secs(30)))?;
+        stream.set_write_timeout(Some(Duration::from_secs(30)))?;
+        
+        let mut buffer = [0u8; 1024];
+        
+        loop {
+            match stream.read(&mut buffer) {
+                Ok(0) => {
+                    println!("客户端 {} 断开连接", peer_addr);
+                    break;
+                }
+                Ok(n) => {
+                    println!("从 {} 收到 {} 字节", peer_addr, n);
+                    
+                    // 回显数据
+                    if let Err(e) = stream.write_all(&buffer[..n]) {
+                        eprintln!("写入错误: {}", e);
+                        break;
+                    }
+                    
+                    stream.flush()?;
+                }
+                Err(e) => {
+                    eprintln!("读取错误: {}", e);
+                    break;
+                }
+            }
+        }
+        
+        Ok(())
+    }
 }
 
-/// # 多线程 TCP 服务器
-pub fn multithreaded_server_demo() {
-    println!("\n=== 多线程 TCP 服务器 ===");
-    
-    println!("多线程处理连接:");
-    println!("  let listener = TcpListener::bind(\"127.0.0.1:7878\")?;");
-    println!("  ");
-    println!("  for stream in listener.incoming() {{");
-    println!("      let stream = stream?;");
-    println!("      ");
-    println!("      thread::spawn(move || {{");
-    println!("          handle_client(stream);");
-    println!("      }});");
-    println!("  }}");
-    
-    println!("\n优点:");
-    println!("  - 并发处理多个客户端");
-    println!("  - 简单直接");
-    
-    println!("\n缺点:");
-    println!("  - 每个连接一个线程，开销大");
-    println!("  - 建议使用线程池");
+/// 简单的 HTTP 服务器
+pub struct SimpleHttpServer {
+    listener: TcpListener,
 }
 
-/// # 线程池 TCP 服务器
-pub fn thread_pool_server_demo() {
-    println!("\n=== 线程池 TCP 服务器 ===");
+impl SimpleHttpServer {
+    /// 创建新的 HTTP 服务器
+    pub fn new(addr: &str) -> io::Result<Self> {
+        let listener = TcpListener::bind(addr)?;
+        Ok(SimpleHttpServer { listener })
+    }
     
-    println!("使用线程池:");
-    println!("  let listener = TcpListener::bind(\"127.0.0.1:7878\")?;");
-    println!("  let pool = ThreadPool::new(4);");
-    println!("  ");
-    println!("  for stream in listener.incoming() {{");
-    println!("      let stream = stream?;");
-    println!("      ");
-    println!("      pool.execute(move || {{");
-    println!("          handle_client(stream);");
-    println!("      }});");
-    println!("  }}");
+    /// 启动服务器
+    pub fn run(&self) -> io::Result<()> {
+        println!("HTTP 服务器启动在 http://{}", self.listener.local_addr()?);
+        
+        for stream in self.listener.incoming() {
+            match stream {
+                Ok(stream) => {
+                    thread::spawn(move || {
+                        if let Err(e) = Self::handle_http_request(stream) {
+                            eprintln!("处理 HTTP 请求错误: {}", e);
+                        }
+                    });
+                }
+                Err(e) => {
+                    eprintln!("连接错误: {}", e);
+                }
+            }
+        }
+        
+        Ok(())
+    }
     
-    println!("\n优点:");
-    println!("  - 固定数量的线程");
-    println!("  - 更好的资源控制");
-    println!("  - 适合生产环境");
+    /// 处理 HTTP 请求
+    fn handle_http_request(mut stream: TcpStream) -> io::Result<()> {
+        let buf_reader = BufReader::new(&mut stream);
+        let mut lines = buf_reader.lines();
+        
+        // 读取请求行
+        let request_line = lines.next()
+            .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "No request line"))??;
+        
+        println!("请求: {}", request_line);
+        
+        // 解析请求
+        let parts: Vec<&str> = request_line.split_whitespace().collect();
+        if parts.len() < 2 {
+            return Self::send_response(&mut stream, 400, "Bad Request", "Invalid request line");
+        }
+        
+        let method = parts[0];
+        let path = parts[1];
+        
+        // 简单路由
+        match (method, path) {
+            ("GET", "/") => {
+                Self::send_response(&mut stream, 200, "OK", 
+                    "<html><body><h1>欢迎使用 Rust HTTP 服务器</h1><p>这是首页</p></body></html>")
+            }
+            ("GET", "/about") => {
+                Self::send_response(&mut stream, 200, "OK", 
+                    "<html><body><h1>关于</h1><p>这是一个用 Rust 编写的简单 HTTP 服务器</p></body></html>")
+            }
+            ("GET", "/json") => {
+                let json = r#"{"message": "Hello, JSON!", "status": "success"}"#;
+                Self::send_json_response(&mut stream, 200, "OK", json)
+            }
+            _ => {
+                Self::send_response(&mut stream, 404, "Not Found", 
+                    "<html><body><h1>404 - 页面未找到</h1></body></html>")
+            }
+        }
+    }
+    
+    /// 发送 HTTP 响应
+    fn send_response(stream: &mut TcpStream, status_code: u16, status_text: &str, body: &str) -> io::Result<()> {
+        let response = format!(
+            "HTTP/1.1 {} {}\r\n\
+             Content-Type: text/html; charset=utf-8\r\n\
+             Content-Length: {}\r\n\
+             Connection: close\r\n\
+             \r\n\
+             {}",
+            status_code,
+            status_text,
+            body.len(),
+            body
+        );
+        
+        stream.write_all(response.as_bytes())?;
+        stream.flush()?;
+        Ok(())
+    }
+    
+    /// 发送 JSON 响应
+    fn send_json_response(stream: &mut TcpStream, status_code: u16, status_text: &str, body: &str) -> io::Result<()> {
+        let response = format!(
+            "HTTP/1.1 {} {}\r\n\
+             Content-Type: application/json\r\n\
+             Content-Length: {}\r\n\
+             Connection: close\r\n\
+             \r\n\
+             {}",
+            status_code,
+            status_text,
+            body.len(),
+            body
+        );
+        
+        stream.write_all(response.as_bytes())?;
+        stream.flush()?;
+        Ok(())
+    }
 }
 
-/// # 异步 TCP 服务器
-pub fn async_tcp_server_demo() {
-    println!("\n=== 异步 TCP 服务器 ===");
-    
-    println!("使用 tokio:");
-    println!("  #[tokio::main]");
-    println!("  async fn main() -> io::Result<()> {{");
-    println!("      let listener = TcpListener::bind(\"127.0.0.1:7878\").await?;");
-    println!("      ");
-    println!("      loop {{");
-    println!("          let (socket, _) = listener.accept().await?;");
-    println!("          ");
-    println!("          tokio::spawn(async move {{");
-    println!("              handle_client(socket).await;");
-    println!("          }});");
-    println!("      }}");
-    println!("  }}");
-    
-    println!("\n优点:");
-    println!("  - 高并发性能");
-    println!("  - 资源利用率高");
-    println!("  - 适合 I/O 密集型应用");
+/// 聊天服务器
+pub struct ChatServer {
+    listener: TcpListener,
+    clients: Arc<Mutex<Vec<TcpStream>>>,
 }
 
-/// # Echo 服务器示例
-pub fn echo_server_demo() {
-    println!("\n=== Echo 服务器示例 ===");
+impl ChatServer {
+    /// 创建新的聊天服务器
+    pub fn new(addr: &str) -> io::Result<Self> {
+        let listener = TcpListener::bind(addr)?;
+        let clients = Arc::new(Mutex::new(Vec::new()));
+        Ok(ChatServer { listener, clients })
+    }
     
-    println!("Echo 服务器（返回客户端发送的内容）:");
-    println!("  fn handle_client(mut stream: TcpStream) -> io::Result<()> {{");
-    println!("      let mut buffer = [0; 1024];");
-    println!("      ");
-    println!("      loop {{");
-    println!("          let n = stream.read(&mut buffer)?;");
-    println!("          if n == 0 {{");
-    println!("              return Ok(());  // 连接关闭");
-    println!("          }}");
-    println!("          ");
-    println!("          stream.write_all(&buffer[..n])?;");
-    println!("          stream.flush()?;");
-    println!("      }}");
-    println!("  }}");
+    /// 启动聊天服务器
+    pub fn run(&self) -> io::Result<()> {
+        println!("聊天服务器启动在 {}", self.listener.local_addr()?);
+        
+        for stream in self.listener.incoming() {
+            match stream {
+                Ok(stream) => {
+                    let clients = Arc::clone(&self.clients);
+                    
+                    // 添加新客户端
+                    if let Ok(stream_clone) = stream.try_clone() {
+                        clients.lock().unwrap().push(stream_clone);
+                    }
+                    
+                    thread::spawn(move || {
+                        if let Err(e) = Self::handle_chat_client(stream, clients) {
+                            eprintln!("处理聊天客户端错误: {}", e);
+                        }
+                    });
+                }
+                Err(e) => {
+                    eprintln!("连接错误: {}", e);
+                }
+            }
+        }
+        
+        Ok(())
+    }
+    
+    /// 处理聊天客户端
+    fn handle_chat_client(mut stream: TcpStream, clients: Arc<Mutex<Vec<TcpStream>>>) -> io::Result<()> {
+        let peer_addr = stream.peer_addr()?;
+        println!("新用户加入: {}", peer_addr);
+        
+        // 广播加入消息
+        let join_msg = format!("用户 {} 加入聊天室\n", peer_addr);
+        Self::broadcast(&clients, &join_msg, Some(&peer_addr))?;
+        
+        let mut buffer = [0u8; 1024];
+        
+        loop {
+            match stream.read(&mut buffer) {
+                Ok(0) => {
+                    println!("用户 {} 离开", peer_addr);
+                    let leave_msg = format!("用户 {} 离开聊天室\n", peer_addr);
+                    Self::broadcast(&clients, &leave_msg, Some(&peer_addr))?;
+                    break;
+                }
+                Ok(n) => {
+                    let message = String::from_utf8_lossy(&buffer[..n]);
+                    let formatted = format!("{}: {}", peer_addr, message);
+                    println!("{}", formatted.trim());
+                    
+                    // 广播消息
+                    Self::broadcast(&clients, &formatted, Some(&peer_addr))?;
+                }
+                Err(e) => {
+                    eprintln!("读取错误: {}", e);
+                    break;
+                }
+            }
+        }
+        
+        // 从客户端列表移除
+        let mut clients = clients.lock().unwrap();
+        clients.retain(|s| s.peer_addr().ok() != Some(peer_addr));
+        
+        Ok(())
+    }
+    
+    /// 广播消息给所有客户端
+    fn broadcast(clients: &Arc<Mutex<Vec<TcpStream>>>, message: &str, exclude: Option<&std::net::SocketAddr>) -> io::Result<()> {
+        let mut clients = clients.lock().unwrap();
+        
+        clients.retain_mut(|client| {
+            // 跳过发送者
+            if let Some(addr) = exclude {
+                if let Ok(peer) = client.peer_addr() {
+                    if &peer == addr {
+                        return true;
+                    }
+                }
+            }
+            
+            // 尝试发送消息
+            if let Err(e) = client.write_all(message.as_bytes()) {
+                eprintln!("发送消息失败: {}", e);
+                return false; // 移除失败的连接
+            }
+            
+            client.flush().is_ok()
+        });
+        
+        Ok(())
+    }
 }
 
-/// # 聊天服务器示例
-pub fn chat_server_demo() {
-    println!("\n=== 聊天服务器示例 ===");
-    
-    println!("聊天服务器结构:");
-    println!("  1. 维护客户端列表");
-    println!("  2. 广播消息给所有客户端");
-    println!("  3. 处理客户端加入/离开");
-    
-    println!("\n关键代码:");
-    println!("  let clients = Arc::new(Mutex::new(Vec::new()));");
-    println!("  ");
-    println!("  // 新客户端");
-    println!("  let clients_clone = Arc::clone(&clients);");
-    println!("  clients_clone.lock().unwrap().push(stream.try_clone()?);");
-    println!("  ");
-    println!("  // 广播消息");
-    println!("  for client in clients.lock().unwrap().iter_mut() {{");
-    println!("      client.write_all(message.as_bytes())?;");
-    println!("  }}");
-}
-
-/// # HTTP 服务器基础
-pub fn http_server_basics_demo() {
-    println!("\n=== HTTP 服务器基础 ===");
-    
-    println!("简单 HTTP 响应:");
-    println!("  let response = format!(");
-    println!("      \"HTTP/1.1 200 OK\\r\\n\"");
-    println!("      \"Content-Type: text/html\\r\\n\"");
-    println!("      \"Content-Length: {{}}\\r\\n\"");
-    println!("      \"\\r\\n\"");
-    println!("      \"{{}}\",");
-    println!("      body.len(),");
-    println!("      body");
-    println!("  );");
-    println!("  stream.write_all(response.as_bytes())?;");
-}
-
-/// # 实战示例：简单 Web 服务器
-pub fn simple_web_server_demo() {
-    println!("\n=== 实战示例：简单 Web 服务器 ===");
-    
-    println!("Web 服务器功能:");
-    println!("  - 处理 GET 请求");
-    println!("  - 返回 HTML 页面");
-    println!("  - 提供静态文件");
-    println!("  - 404 错误处理");
-    
-    println!("\n路由示例:");
-    println!("  match (method, path) {{");
-    println!("      (\"GET\", \"/\") => {{");
-    println!("          response = \"HTTP/1.1 200 OK\\r\\n\\r\\n<h1>首页</h1>\";");
-    println!("      }}");
-    println!("      (\"GET\", \"/about\") => {{");
-    println!("          response = \"HTTP/1.1 200 OK\\r\\n\\r\\n<h1>关于</h1>\";");
-    println!("      }}");
-    println!("      _ => {{");
-    println!("          response = \"HTTP/1.1 404 NOT FOUND\\r\\n\\r\\n<h1>404</h1>\";");
-    println!("      }}");
-    println!("  }}");
-}
-
-/// # TCP 服务器最佳实践
-pub fn tcp_server_best_practices_demo() {
-    println!("\n=== TCP 服务器最佳实践 ===");
-    
-    println!("1. 错误处理:");
-    println!("   - 处理所有可能的 I/O 错误");
-    println!("   - 记录错误日志");
-    println!("   - 优雅地处理客户端断开");
-    
-    println!("\n2. 并发模型选择:");
-    println!("   - 低并发: 多线程");
-    println!("   - 高并发: 异步 (tokio)");
-    println!("   - 混合: 线程池");
-    
-    println!("\n3. 资源管理:");
-    println!("   - 设置超时");
-    println!("   - 限制连接数");
-    println!("   - 清理僵尸连接");
-    
-    println!("\n4. 安全性:");
-    println!("   - 验证输入");
-    println!("   - 限流");
-    println!("   - DDoS 防护");
-    
-    println!("\n5. 监控和日志:");
-    println!("   - 连接数统计");
-    println!("   - 性能监控");
-    println!("   - 详细日志");
-    
-    println!("\n6. 推荐库:");
-    println!("   - tokio: 异步运行时");
-    println!("   - async-std: 另一个异步运行时");
-    println!("   - mio: 底层事件循环");
-}
-
-/// 运行所有 TCP 服务器示例
-pub fn run_all() {
+/// 运行示例
+pub fn run_examples() {
     println!("\n╔════════════════════════════════════╗");
-    println!("║        Rust TCP 服务器详解         ║");
-    println!("╚════════════════════════════════════╝");
+    println!("║        Rust TCP 服务器示例         ║");
+    println!("╚════════════════════════════════════╝\n");
     
-    basic_tcp_server_demo();
-    handle_client_demo();
-    multithreaded_server_demo();
-    thread_pool_server_demo();
-    async_tcp_server_demo();
-    echo_server_demo();
-    chat_server_demo();
-    http_server_basics_demo();
-    simple_web_server_demo();
-    tcp_server_best_practices_demo();
+    println!("可用的服务器:");
+    println!("1. Echo 服务器 - 回显客户端发送的数据");
+    println!("2. HTTP 服务器 - 简单的 Web 服务器");
+    println!("3. 聊天服务器 - 多用户聊天室");
+    println!("\n使用示例:");
+    println!("  let server = EchoServer::new(\"127.0.0.1:7878\")?;");
+    println!("  server.run_multithreaded()?;");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_echo_server_creation() {
+        let result = EchoServer::new("127.0.0.1:0");
+        assert!(result.is_ok());
+    }
+    
+    #[test]
+    fn test_http_server_creation() {
+        let result = SimpleHttpServer::new("127.0.0.1:0");
+        assert!(result.is_ok());
+    }
 }

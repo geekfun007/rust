@@ -1,302 +1,229 @@
-// HTTP 客户端
+// HTTP 客户端模块
+//
+// 本模块提供 HTTP 客户端功能的说明和示例
+// 完整的实战代码请参考: examples/http_client_practical.rs 和 examples/reqwest_advanced.rs
 
-/// # reqwest 基础
-pub fn reqwest_basics_demo() {
-    println!("\n=== reqwest 基础 ===");
-    
-    println!("GET 请求:");
-    println!("  let response = reqwest::get(\"https://api.example.com/users\")");
-    println!("      .await?");
-    println!("      .text()");
-    println!("      .await?;");
-    println!("  println!(\"响应: {{}}\", response);");
-    
-    println!("\nPOST 请求:");
-    println!("  let client = reqwest::Client::new();");
-    println!("  let response = client");
-    println!("      .post(\"https://api.example.com/users\")");
-    println!("      .json(&user_data)");
-    println!("      .send()");
-    println!("      .await?;");
+/// HTTP 客户端概述
+///
+/// Rust 生态系统中主要的 HTTP 客户端库是 `reqwest`
+///
+/// # 特性
+/// - 异步和同步 API
+/// - 自动连接池管理
+/// - JSON 序列化/反序列化
+/// - 文件上传/下载
+/// - Cookie 管理
+/// - 代理支持
+/// - TLS/HTTPS 支持
+pub mod overview {
+    pub const DESCRIPTION: &str = r#"
+reqwest 是 Rust 最流行的 HTTP 客户端库
+
+核心特性:
+- 基于 hyper 和 tokio
+- 自动连接池和 keep-alive
+- 支持 HTTP/1.1 和 HTTP/2
+- JSON 自动序列化
+- 流式上传和下载
+- 重定向处理
+- 压缩支持 (gzip, br)
+"#;
 }
 
-/// # JSON 处理
-pub fn json_handling_demo() {
-    println!("\n=== JSON 处理 ===");
-    
-    println!("发送 JSON:");
-    println!("  use serde::{{Serialize, Deserialize}};");
-    println!("  ");
-    println!("  #[derive(Serialize)]");
-    println!("  struct User {{");
-    println!("      name: String,");
-    println!("      email: String,");
-    println!("  }}");
-    println!("  ");
-    println!("  let user = User {{");
-    println!("      name: \"Alice\".to_string(),");
-    println!("      email: \"alice@example.com\".to_string(),");
-    println!("  }};");
-    println!("  ");
-    println!("  let response = client");
-    println!("      .post(\"https://api.example.com/users\")");
-    println!("      .json(&user)");
-    println!("      .send()");
-    println!("      .await?;");
-    
-    println!("\n接收 JSON:");
-    println!("  #[derive(Deserialize)]");
-    println!("  struct ApiResponse {{");
-    println!("      id: u32,");
-    println!("      name: String,");
-    println!("  }}");
-    println!("  ");
-    println!("  let data: ApiResponse = response.json().await?;");
-    println!("  println!(\"ID: {{}}, Name: {{}}\", data.id, data.name);");
+/// 基础用法示例
+pub mod basics {
+    /// 简单的 GET 请求示例
+    pub const GET_EXAMPLE: &str = r#"
+use reqwest;
+
+// 简单 GET 请求
+let response = reqwest::get("https://api.example.com/data")
+    .await?
+    .text()
+    .await?;
+
+println!("Response: {}", response);
+"#;
+
+    /// POST 请求示例
+    pub const POST_EXAMPLE: &str = r#"
+use reqwest::Client;
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize)]
+struct User {
+    name: String,
+    email: String,
 }
 
-/// # 请求配置
-pub fn request_configuration_demo() {
-    println!("\n=== 请求配置 ===");
-    
-    println!("设置请求头:");
-    println!("  let response = client");
-    println!("      .get(\"https://api.example.com/data\")");
-    println!("      .header(\"Authorization\", \"Bearer token\")");
-    println!("      .header(\"User-Agent\", \"MyApp/1.0\")");
-    println!("      .send()");
-    println!("      .await?;");
-    
-    println!("\n查询参数:");
-    println!("  let response = client");
-    println!("      .get(\"https://api.example.com/search\")");
-    println!("      .query(&[(\"q\", \"rust\"), (\"page\", \"1\")])");
-    println!("      .send()");
-    println!("      .await?;");
-    
-    println!("\n超时设置:");
-    println!("  use std::time::Duration;");
-    println!("  ");
-    println!("  let client = reqwest::Client::builder()");
-    println!("      .timeout(Duration::from_secs(10))");
-    println!("      .build()?;");
+let client = Client::new();
+let user = User {
+    name: "Alice".to_string(),
+    email: "alice@example.com".to_string(),
+};
+
+let response = client
+    .post("https://api.example.com/users")
+    .json(&user)
+    .send()
+    .await?;
+"#;
 }
 
-/// # 表单提交
-pub fn form_submission_demo() {
-    println!("\n=== 表单提交 ===");
+/// 客户端配置
+pub mod configuration {
+    /// 客户端构建器示例
+    pub const CLIENT_BUILDER: &str = r#"
+use reqwest::Client;
+use std::time::Duration;
+
+let client = Client::builder()
+    // 超时设置
+    .timeout(Duration::from_secs(30))
+    .connect_timeout(Duration::from_secs(10))
     
-    println!("URL编码表单:");
-    println!("  let params = [(\"username\", \"alice\"), (\"password\", \"secret\")];");
-    println!("  ");
-    println!("  let response = client");
-    println!("      .post(\"https://api.example.com/login\")");
-    println!("      .form(&params)");
-    println!("      .send()");
-    println!("      .await?;");
+    // 连接池配置
+    .pool_max_idle_per_host(10)
+    .pool_idle_timeout(Duration::from_secs(90))
     
-    println!("\n多部分表单（文件上传）:");
-    println!("  use reqwest::multipart;");
-    println!("  ");
-    println!("  let form = multipart::Form::new()");
-    println!("      .text(\"name\", \"image.jpg\")");
-    println!("      .file(\"file\", \"/path/to/image.jpg\")?;");
-    println!("  ");
-    println!("  let response = client");
-    println!("      .post(\"https://api.example.com/upload\")");
-    println!("      .multipart(form)");
-    println!("      .send()");
-    println!("      .await?;");
+    // TLS 配置
+    .use_rustls_tls()
+    
+    // 重定向策略
+    .redirect(reqwest::redirect::Policy::limited(10))
+    
+    // User-Agent
+    .user_agent("MyApp/1.0")
+    
+    .build()?;
+"#;
 }
 
-/// # Cookie 处理
-pub fn cookie_handling_demo() {
-    println!("\n=== Cookie 处理 ===");
-    
-    println!("启用 Cookie:");
-    println!("  let client = reqwest::Client::builder()");
-    println!("      .cookie_store(true)");
-    println!("      .build()?;");
-    println!("  ");
-    println!("  // 第一次请求设置 Cookie");
-    println!("  client.get(\"https://api.example.com/login\").send().await?;");
-    println!("  ");
-    println!("  // 后续请求自动携带 Cookie");
-    println!("  client.get(\"https://api.example.com/profile\").send().await?;");
+/// 高级功能
+pub mod advanced {
+    /// 并发请求示例
+    pub const CONCURRENT_REQUESTS: &str = r#"
+use futures::future::join_all;
+
+let urls = vec![
+    "https://api.example.com/data/1",
+    "https://api.example.com/data/2",
+    "https://api.example.com/data/3",
+];
+
+let client = Client::new();
+
+let futures = urls.into_iter().map(|url| {
+    let client = client.clone();
+    async move { client.get(url).send().await }
+});
+
+let results = join_all(futures).await;
+"#;
+
+    /// 文件上传示例
+    pub const FILE_UPLOAD: &str = r#"
+use reqwest::multipart;
+
+let form = multipart::Form::new()
+    .text("name", "profile.jpg")
+    .file("file", "/path/to/image.jpg")
+    .await?;
+
+let response = client
+    .post("https://api.example.com/upload")
+    .multipart(form)
+    .send()
+    .await?;
+"#;
+
+    /// 流式下载示例
+    pub const STREAMING_DOWNLOAD: &str = r#"
+use futures_util::StreamExt;
+use tokio::io::AsyncWriteExt;
+
+let response = client
+    .get("https://example.com/large_file.zip")
+    .send()
+    .await?;
+
+let mut file = tokio::fs::File::create("output.zip").await?;
+let mut stream = response.bytes_stream();
+
+while let Some(chunk) = stream.next().await {
+    let chunk = chunk?;
+    file.write_all(&chunk).await?;
+}
+"#;
 }
 
-/// # 错误处理
-pub fn error_handling_demo() {
-    println!("\n=== 错误处理 ===");
-    
-    println!("检查状态码:");
-    println!("  let response = client.get(url).send().await?;");
-    println!("  ");
-    println!("  if response.status().is_success() {{");
-    println!("      let body = response.text().await?;");
-    println!("      println!(\"成功: {{}}\", body);");
-    println!("  }} else {{");
-    println!("      eprintln!(\"错误: {{}}\", response.status());");
-    println!("  }}");
-    
-    println!("\n自动错误处理:");
-    println!("  let response = client");
-    println!("      .get(url)");
-    println!("      .send()");
-    println!("      .await?");
-    println!("      .error_for_status()?;  // 非 2xx 状态码返回错误");
+/// 错误处理
+pub mod error_handling {
+    /// 错误处理最佳实践
+    pub const ERROR_HANDLING: &str = r#"
+// 基础错误处理
+match client.get(url).send().await {
+    Ok(response) => {
+        if response.status().is_success() {
+            let body = response.text().await?;
+            println!("Success: {}", body);
+        } else {
+            eprintln!("HTTP Error: {}", response.status());
+        }
+    }
+    Err(e) => {
+        if e.is_timeout() {
+            eprintln!("Request timed out");
+        } else if e.is_connect() {
+            eprintln!("Connection failed");
+        } else {
+            eprintln!("Error: {}", e);
+        }
+    }
 }
 
-/// # 代理设置
-pub fn proxy_demo() {
-    println!("\n=== 代理设置 ===");
-    
-    println!("HTTP 代理:");
-    println!("  let proxy = reqwest::Proxy::http(\"http://proxy.example.com:8080\")?;");
-    println!("  ");
-    println!("  let client = reqwest::Client::builder()");
-    println!("      .proxy(proxy)");
-    println!("      .build()?;");
-    
-    println!("\nHTTPS 代理:");
-    println!("  let proxy = reqwest::Proxy::https(\"https://proxy.example.com:8080\")?;");
+// 使用 error_for_status
+let response = client
+    .get(url)
+    .send()
+    .await?
+    .error_for_status()?;  // 非 2xx 返回错误
+"#;
 }
 
-/// # 并发请求
-pub fn concurrent_requests_demo() {
-    println!("\n=== 并发请求 ===");
+/// 运行示例和文档
+pub fn print_documentation() {
+    println!("\n╔════════════════════════════════════════════╗");
+    println!("║       Rust HTTP 客户端 (reqwest)          ║");
+    println!("╚════════════════════════════════════════════╝\n");
     
-    println!("同时发送多个请求:");
-    println!("  let urls = vec![");
-    println!("      \"https://api.example.com/data/1\",");
-    println!("      \"https://api.example.com/data/2\",");
-    println!("      \"https://api.example.com/data/3\",");
-    println!("  ];");
-    println!("  ");
-    println!("  let client = reqwest::Client::new();");
-    println!("  let futures: Vec<_> = urls");
-    println!("      .into_iter()");
-    println!("      .map(|url| client.get(url).send())");
-    println!("      .collect();");
-    println!("  ");
-    println!("  let results = futures::future::join_all(futures).await;");
-    println!("  ");
-    println!("  for result in results {{");
-    println!("      match result {{");
-    println!("          Ok(response) => println!(\"成功: {{}}\", response.status()),");
-    println!("          Err(e) => eprintln!(\"错误: {{}}\", e),");
-    println!("      }}");
-    println!("  }}");
+    println!("{}", overview::DESCRIPTION);
+    
+    println!("\n📖 详细文档:");
+    println!("   docs/HTTP_PRACTICAL_GUIDE.md");
+    println!("   docs/REQWEST_AXUM_COMPLETE.md");
+    println!("   docs/HTTP_CHEATSHEET.md");
+    
+    println!("\n🚀 完整示例:");
+    println!("   examples/http_client_practical.rs");
+    println!("   examples/reqwest_advanced.rs");
+    
+    println!("\n▶️  运行示例:");
+    println!("   cargo run --example http_client_practical --features full");
+    println!("   cargo run --example reqwest_advanced --features full");
+    
+    println!("\n💡 快速开始:");
+    println!("{}", basics::GET_EXAMPLE);
 }
 
-/// # 流式下载
-pub fn streaming_download_demo() {
-    println!("\n=== 流式下载 ===");
+#[cfg(test)]
+mod tests {
+    use super::*;
     
-    println!("下载大文件:");
-    println!("  use tokio::io::AsyncWriteExt;");
-    println!("  ");
-    println!("  let response = client");
-    println!("      .get(\"https://example.com/large_file.zip\")");
-    println!("      .send()");
-    println!("      .await?;");
-    println!("  ");
-    println!("  let mut file = tokio::fs::File::create(\"output.zip\").await?;");
-    println!("  let mut stream = response.bytes_stream();");
-    println!("  ");
-    println!("  while let Some(chunk) = stream.next().await {{");
-    println!("      let chunk = chunk?;");
-    println!("      file.write_all(&chunk).await?;");
-    println!("  }}");
-}
-
-/// # 实战示例：API 客户端
-pub fn api_client_demo() {
-    println!("\n=== 实战示例：API 客户端 ===");
-    
-    println!("构建 API 客户端:");
-    println!("  struct ApiClient {{");
-    println!("      client: reqwest::Client,");
-    println!("      base_url: String,");
-    println!("      api_key: String,");
-    println!("  }}");
-    println!("  ");
-    println!("  impl ApiClient {{");
-    println!("      fn new(base_url: String, api_key: String) -> Self {{");
-    println!("          let client = reqwest::Client::new();");
-    println!("          ApiClient {{ client, base_url, api_key }}");
-    println!("      }}");
-    println!("      ");
-    println!("      async fn get_user(&self, id: u32) -> Result<User, Error> {{");
-    println!("          let url = format!(\"{{}}/users/{{}}\", self.base_url, id);");
-    println!("          ");
-    println!("          let response = self.client");
-    println!("              .get(&url)");
-    println!("              .header(\"Authorization\", format!(\"Bearer {{}}\", self.api_key))");
-    println!("              .send()");
-    println!("              .await?");
-    println!("              .error_for_status()?;");
-    println!("          ");
-    println!("          let user = response.json::<User>().await?;");
-    println!("          Ok(user)");
-    println!("      }}");
-    println!("  }}");
-}
-
-/// # HTTP 客户端最佳实践
-pub fn http_client_best_practices_demo() {
-    println!("\n=== HTTP 客户端最佳实践 ===");
-    
-    println!("1. 客户端复用:");
-    println!("   - 创建一个 Client 实例并复用");
-    println!("   - 避免为每个请求创建新客户端");
-    println!("   - 连接池自动管理");
-    
-    println!("\n2. 超时设置:");
-    println!("   - 总是设置超时");
-    println!("   - 连接超时和读取超时");
-    println!("   - 避免无限等待");
-    
-    println!("\n3. 错误处理:");
-    println!("   - 处理网络错误");
-    println!("   - 检查状态码");
-    println!("   - 实现重试机制");
-    
-    println!("\n4. 性能优化:");
-    println!("   - 使用连接池");
-    println!("   - 并发请求");
-    println!("   - HTTP/2 支持");
-    println!("   - 压缩");
-    
-    println!("\n5. 安全性:");
-    println!("   - HTTPS");
-    println!("   - 证书验证");
-    println!("   - 敏感信息保护");
-    
-    println!("\n6. 推荐配置:");
-    println!("   let client = reqwest::Client::builder()");
-    println!("       .timeout(Duration::from_secs(30))");
-    println!("       .pool_max_idle_per_host(10)");
-    println!("       .http2_prior_knowledge()");
-    println!("       .gzip(true)");
-    println!("       .build()?;");
-}
-
-/// 运行所有 HTTP 客户端示例
-pub fn run_all() {
-    println!("\n╔════════════════════════════════════╗");
-    println!("║       Rust HTTP 客户端详解         ║");
-    println!("╚════════════════════════════════════╝");
-    
-    reqwest_basics_demo();
-    json_handling_demo();
-    request_configuration_demo();
-    form_submission_demo();
-    cookie_handling_demo();
-    error_handling_demo();
-    proxy_demo();
-    concurrent_requests_demo();
-    streaming_download_demo();
-    api_client_demo();
-    http_client_best_practices_demo();
+    #[test]
+    fn test_documentation_exists() {
+        assert!(!overview::DESCRIPTION.is_empty());
+        assert!(!basics::GET_EXAMPLE.is_empty());
+        assert!(!basics::POST_EXAMPLE.is_empty());
+    }
 }
