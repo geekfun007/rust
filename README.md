@@ -121,9 +121,26 @@ cargo build --release
 
 ### 7. 网络编程 (network/)
 - TCP 服务器与客户端
-- HTTP 服务器 (使用 tokio + warp/axum)
-- HTTP 客户端 (使用 reqwest)
-- WebSocket 通信
+- **HTTP 客户端实战** (11 个完整示例) 🔥
+- **HTTP 服务器实战** (完整 REST API) 🔥  
+- **WebSocket 实时聊天室** 🔥
+
+详细内容：
+- 📖 [HTTP 实战指南](docs/HTTP_PRACTICAL_GUIDE.md) - 完整教程
+- 📝 [HTTP 速查表](docs/HTTP_CHEATSHEET.md) - 快速参考
+- 📋 [项目完成总结](HTTP_PRACTICAL_COMPLETE.md) - 功能说明
+
+运行示例：
+```bash
+# HTTP 客户端（11 个示例）
+cargo run --example http_client_practical --features full
+
+# HTTP 服务器（REST API）
+cargo run --example http_server_practical --features full
+
+# WebSocket 聊天室
+cargo run --example websocket_practical --features full
+```
 
 ### 8. 最佳实践 (best_practices/)
 - 代码组织与模块化

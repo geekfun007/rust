@@ -1,162 +1,299 @@
-// TCP 客户端
+// TCP 客户端实现
 
-use std::net::TcpStream;
-use std::io::{Read, Write};
+use std::io::{self, Read, Write};
+use std::net::{TcpStream, SocketAddr};
 use std::time::Duration;
 
-/// # 基本 TCP 客户端
-pub fn basic_tcp_client_demo() {
-    println!("\n=== 基本 TCP 客户端 ===");
-    
-    println!("连接服务器:");
-    println!("  let mut stream = TcpStream::connect(\"127.0.0.1:7878\")?;");
-    println!("  ");
-    println!("  // 发送数据");
-    println!("  stream.write_all(b\"Hello, Server!\")?;");
-    println!("  stream.flush()?;");
-    println!("  ");
-    println!("  // 接收响应");
-    println!("  let mut buffer = [0; 1024];");
-    println!("  let n = stream.read(&mut buffer)?;");
-    println!("  let response = String::from_utf8_lossy(&buffer[..n]);");
-    println!("  println!(\"响应: {{}}\", response);");
+/// TCP 客户端
+pub struct TcpClient {
+    stream: TcpStream,
 }
 
-/// # 设置超时
-pub fn timeout_demo() {
-    println!("\n=== 设置超时 ===");
+impl TcpClient {
+    /// 连接到服务器
+    pub fn connect(addr: &str) -> io::Result<Self> {
+        let stream = TcpStream::connect(addr)?;
+        println!("已连接到 {}", addr);
+        Ok(TcpClient { stream })
+    }
     
-    println!("连接超时:");
-    println!("  let stream = TcpStream::connect_timeout(");
-    println!("      &\"127.0.0.1:7878\".parse()?,");
-    println!("      Duration::from_secs(5)");
-    println!("  )?;");
+    /// 带超时的连接
+    pub fn connect_timeout(addr: &str, timeout: Duration) -> io::Result<Self> {
+        let socket_addr: SocketAddr = addr.parse()
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
+        
+        let stream = TcpStream::connect_timeout(&socket_addr, timeout)?;
+        println!("已连接到 {} (超时: {:?})", addr, timeout);
+        Ok(TcpClient { stream })
+    }
     
-    println!("\n读写超时:");
-    println!("  stream.set_read_timeout(Some(Duration::from_secs(5)))?;");
-    println!("  stream.set_write_timeout(Some(Duration::from_secs(5)))?;");
+    /// 设置读取超时
+    pub fn set_read_timeout(&mut self, timeout: Option<Duration>) -> io::Result<()> {
+        self.stream.set_read_timeout(timeout)
+    }
+    
+    /// 设置写入超时
+    pub fn set_write_timeout(&mut self, timeout: Option<Duration>) -> io::Result<()> {
+        self.stream.set_write_timeout(timeout)
+    }
+    
+    /// 发送数据
+    pub fn send(&mut self, data: &[u8]) -> io::Result<()> {
+        self.stream.write_all(data)?;
+        self.stream.flush()?;
+        Ok(())
+    }
+    
+    /// 发送字符串
+    pub fn send_string(&mut self, message: &str) -> io::Result<()> {
+        self.send(message.as_bytes())
+    }
+    
+    /// 接收数据
+    pub fn receive(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+        self.stream.read(buffer)
+    }
+    
+    /// 接收所有数据直到连接关闭
+    pub fn receive_all(&mut self) -> io::Result<Vec<u8>> {
+        let mut data = Vec::new();
+        self.stream.read_to_end(&mut data)?;
+        Ok(data)
+    }
+    
+    /// 接收字符串
+    pub fn receive_string(&mut self) -> io::Result<String> {
+        let data = self.receive_all()?;
+        String::from_utf8(data)
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
+    }
+    
+    /// 获取本地地址
+    pub fn local_addr(&self) -> io::Result<SocketAddr> {
+        self.stream.local_addr()
+    }
+    
+    /// 获取对端地址
+    pub fn peer_addr(&self) -> io::Result<SocketAddr> {
+        self.stream.peer_addr()
+    }
 }
 
-/// # 持久连接
-pub fn persistent_connection_demo() {
-    println!("\n=== 持久连接 ===");
-    
-    println!("保持连接:");
-    println!("  let mut stream = TcpStream::connect(\"127.0.0.1:7878\")?;");
-    println!("  ");
-    println!("  loop {{");
-    println!("      // 发送请求");
-    println!("      stream.write_all(b\"request\")?;");
-    println!("      ");
-    println!("      // 接收响应");
-    println!("      let mut buffer = [0; 1024];");
-    println!("      let n = stream.read(&mut buffer)?;");
-    println!("      if n == 0 {{");
-    println!("          break;  // 连接关闭");
-    println!("      }}");
-    println!("      ");
-    println!("      // 处理响应");
-    println!("      process_response(&buffer[..n]);");
-    println!("  }}");
+/// Echo 客户端 - 用于测试 Echo 服务器
+pub struct EchoClient {
+    client: TcpClient,
 }
 
-/// # 异步 TCP 客户端
-pub fn async_tcp_client_demo() {
-    println!("\n=== 异步 TCP 客户端 ===");
+impl EchoClient {
+    /// 连接到 Echo 服务器
+    pub fn connect(addr: &str) -> io::Result<Self> {
+        let client = TcpClient::connect(addr)?;
+        Ok(EchoClient { client })
+    }
     
-    println!("使用 tokio:");
-    println!("  use tokio::net::TcpStream;");
-    println!("  use tokio::io::{{AsyncReadExt, AsyncWriteExt}};");
-    println!("  ");
-    println!("  let mut stream = TcpStream::connect(\"127.0.0.1:7878\").await?;");
-    println!("  ");
-    println!("  stream.write_all(b\"Hello\").await?;");
-    println!("  ");
-    println!("  let mut buffer = [0; 1024];");
-    println!("  let n = stream.read(&mut buffer).await?;");
+    /// 发送消息并接收回显
+    pub fn echo(&mut self, message: &str) -> io::Result<String> {
+        println!("发送: {}", message);
+        
+        // 发送消息
+        self.client.send_string(message)?;
+        
+        // 接收回显
+        let mut buffer = vec![0u8; message.len()];
+        let n = self.client.receive(&mut buffer)?;
+        
+        let response = String::from_utf8_lossy(&buffer[..n]).to_string();
+        println!("收到: {}", response);
+        
+        Ok(response)
+    }
+    
+    /// 交互式 Echo 会话
+    pub fn interactive_session(&mut self) -> io::Result<()> {
+        println!("Echo 客户端启动 (输入 'quit' 退出)");
+        
+        let stdin = io::stdin();
+        let mut input = String::new();
+        
+        loop {
+            print!("> ");
+            io::stdout().flush()?;
+            
+            input.clear();
+            stdin.read_line(&mut input)?;
+            
+            let trimmed = input.trim();
+            if trimmed == "quit" {
+                break;
+            }
+            
+            match self.echo(trimmed) {
+                Ok(response) => {
+                    println!("回显: {}", response);
+                }
+                Err(e) => {
+                    eprintln!("错误: {}", e);
+                    break;
+                }
+            }
+        }
+        
+        Ok(())
+    }
 }
 
-/// # 实战示例：Echo 客户端
-pub fn echo_client_demo() {
-    println!("\n=== 实战示例：Echo 客户端 ===");
+/// 简单的 HTTP 客户端
+pub struct SimpleHttpClient;
+
+impl SimpleHttpClient {
+    /// 发送 GET 请求
+    pub fn get(url: &str) -> io::Result<String> {
+        // 解析 URL
+        let (host, path) = Self::parse_url(url)?;
+        
+        // 连接到服务器
+        let addr = format!("{}:80", host);
+        let mut client = TcpClient::connect(&addr)?;
+        
+        // 构建 HTTP 请求
+        let request = format!(
+            "GET {} HTTP/1.1\r\n\
+             Host: {}\r\n\
+             Connection: close\r\n\
+             User-Agent: Rust-SimpleHttpClient/1.0\r\n\
+             \r\n",
+            path, host
+        );
+        
+        // 发送请求
+        client.send_string(&request)?;
+        
+        // 接收响应
+        client.receive_string()
+    }
     
-    println!("Echo 客户端:");
-    println!("  let mut stream = TcpStream::connect(\"127.0.0.1:7878\")?;");
-    println!("  let mut buffer = [0; 1024];");
-    println!("  ");
-    println!("  loop {{");
-    println!("      // 读取用户输入");
-    println!("      let mut input = String::new();");
-    println!("      io::stdin().read_line(&mut input)?;");
-    println!("      ");
-    println!("      // 发送到服务器");
-    println!("      stream.write_all(input.as_bytes())?;");
-    println!("      ");
-    println!("      // 接收回显");
-    println!("      let n = stream.read(&mut buffer)?;");
-    println!("      println!(\"Echo: {{}}\", String::from_utf8_lossy(&buffer[..n]));");
-    println!("  }}");
+    /// 简单的 URL 解析
+    fn parse_url(url: &str) -> io::Result<(String, String)> {
+        // 移除协议
+        let url = url.trim_start_matches("http://");
+        
+        // 分割 host 和 path
+        let parts: Vec<&str> = url.splitn(2, '/').collect();
+        let host = parts[0].to_string();
+        let path = if parts.len() > 1 {
+            format!("/{}", parts[1])
+        } else {
+            "/".to_string()
+        };
+        
+        Ok((host, path))
+    }
 }
 
-/// # 实战示例：HTTP 客户端
-pub fn http_client_demo() {
-    println!("\n=== 实战示例：HTTP 客户端 ===");
-    
-    println!("简单 HTTP 请求:");
-    println!("  let mut stream = TcpStream::connect(\"example.com:80\")?;");
-    println!("  ");
-    println!("  let request = \"GET / HTTP/1.1\\r\\n\"");
-    println!("                \"Host: example.com\\r\\n\"");
-    println!("                \"Connection: close\\r\\n\"");
-    println!("                \"\\r\\n\";");
-    println!("  ");
-    println!("  stream.write_all(request.as_bytes())?;");
-    println!("  ");
-    println!("  let mut response = String::new();");
-    println!("  stream.read_to_string(&mut response)?;");
-    println!("  println!(\"响应: {{}}\", response);");
+/// 聊天客户端
+pub struct ChatClient {
+    client: TcpClient,
 }
 
-/// # TCP 客户端最佳实践
-pub fn tcp_client_best_practices_demo() {
-    println!("\n=== TCP 客户端最佳实践 ===");
+impl ChatClient {
+    /// 连接到聊天服务器
+    pub fn connect(addr: &str) -> io::Result<Self> {
+        let client = TcpClient::connect(addr)?;
+        println!("已连接到聊天服务器");
+        Ok(ChatClient { client })
+    }
     
-    println!("1. 连接管理:");
-    println!("   - 设置合理的超时");
-    println!("   - 处理连接失败");
-    println!("   - 实现重连机制");
+    /// 发送消息
+    pub fn send_message(&mut self, message: &str) -> io::Result<()> {
+        self.client.send_string(&format!("{}\n", message))
+    }
     
-    println!("\n2. 错误处理:");
-    println!("   - 处理网络错误");
-    println!("   - 处理超时");
-    println!("   - 优雅降级");
-    
-    println!("\n3. 数据处理:");
-    println!("   - 使用缓冲");
-    println!("   - 处理部分读写");
-    println!("   - 正确处理二进制数据");
-    
-    println!("\n4. 资源清理:");
-    println!("   - 正确关闭连接");
-    println!("   - 释放资源");
-    
-    println!("\n5. 推荐库:");
-    println!("   - reqwest: HTTP 客户端");
-    println!("   - hyper: 底层 HTTP");
-    println!("   - tokio: 异步 I/O");
+    /// 启动交互式聊天会话
+    pub fn start_session(&mut self) -> io::Result<()> {
+        println!("聊天客户端启动 (输入 '/quit' 退出)");
+        println!("您可以开始发送消息...\n");
+        
+        // 克隆 stream 用于接收线程
+        let mut stream_clone = self.client.stream.try_clone()?;
+        
+        // 启动接收线程
+        std::thread::spawn(move || {
+            let mut buffer = [0u8; 1024];
+            loop {
+                match stream_clone.read(&mut buffer) {
+                    Ok(0) => {
+                        println!("\n服务器断开连接");
+                        break;
+                    }
+                    Ok(n) => {
+                        let message = String::from_utf8_lossy(&buffer[..n]);
+                        print!("{}", message);
+                        io::stdout().flush().ok();
+                    }
+                    Err(e) => {
+                        eprintln!("\n接收错误: {}", e);
+                        break;
+                    }
+                }
+            }
+        });
+        
+        // 主线程处理用户输入
+        let stdin = io::stdin();
+        let mut input = String::new();
+        
+        loop {
+            input.clear();
+            stdin.read_line(&mut input)?;
+            
+            let trimmed = input.trim();
+            if trimmed == "/quit" {
+                println!("退出聊天...");
+                break;
+            }
+            
+            if !trimmed.is_empty() {
+                self.send_message(trimmed)?;
+            }
+        }
+        
+        Ok(())
+    }
 }
 
-/// 运行所有 TCP 客户端示例
-pub fn run_all() {
+/// 运行示例
+pub fn run_examples() {
     println!("\n╔════════════════════════════════════╗");
-    println!("║        Rust TCP 客户端详解         ║");
-    println!("╚════════════════════════════════════╝");
+    println!("║        Rust TCP 客户端示例         ║");
+    println!("╚════════════════════════════════════╝\n");
     
-    basic_tcp_client_demo();
-    timeout_demo();
-    persistent_connection_demo();
-    async_tcp_client_demo();
-    echo_client_demo();
-    http_client_demo();
-    tcp_client_best_practices_demo();
+    println!("可用的客户端:");
+    println!("1. 基础 TCP 客户端 - 通用 TCP 连接");
+    println!("2. Echo 客户端 - 测试 Echo 服务器");
+    println!("3. HTTP 客户端 - 简单的 HTTP GET 请求");
+    println!("4. 聊天客户端 - 连接到聊天服务器");
+    println!("\n使用示例:");
+    println!("  let mut client = TcpClient::connect(\"127.0.0.1:7878\")?;");
+    println!("  client.send_string(\"Hello, Server!\")?;");
+    println!("  let mut buffer = [0u8; 1024];");
+    println!("  let n = client.receive(&mut buffer)?;");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_url_parsing() {
+        let (host, path) = SimpleHttpClient::parse_url("http://example.com/test").unwrap();
+        assert_eq!(host, "example.com");
+        assert_eq!(path, "/test");
+    }
+    
+    #[test]
+    fn test_url_parsing_no_path() {
+        let (host, path) = SimpleHttpClient::parse_url("http://example.com").unwrap();
+        assert_eq!(host, "example.com");
+        assert_eq!(path, "/");
+    }
 }

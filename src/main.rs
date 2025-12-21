@@ -138,10 +138,10 @@ fn run_network_demos() {
     println!("│                  网络编程示例                           │");
     println!("└────────────────────────────────────────────────────────┘");
     
-    network::tcp_server::run_all();
-    network::tcp_client::run_all();
-    network::http_server::run_all();
-    network::http_client::run_all();
+    network::tcp_server::run_examples();
+    network::tcp_client::run_examples();
+    network::http_server::print_documentation();
+    network::http_client::print_documentation();
     
     println!("\n注意：网络示例主要展示代码结构。");
     println!("实际运行的网络服务器和客户端请参考 examples/ 目录。");
