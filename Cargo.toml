@@ -1,0 +1,17 @@
+[package]
+name = "idl-fetcher"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.82"
+
+[dependencies]
+reqwest = { version = "0.11", features = ["blocking", "rustls-tls"], default-features = false }
+regex = "1.10"
+anyhow = "1.0"
+thiserror = "1.0"
+tokio = { version = "1.35", features = ["full"] }
+url = "2.5"
+clap = { version = "4.4", features = ["derive"] }
+
+[dev-dependencies]
+tempfile = "3.8"
