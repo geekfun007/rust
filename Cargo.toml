@@ -7,7 +7,8 @@ edition = "2021"
 # HTTP client/server
 tokio = { version = "1.35", features = ["full"] }
 axum = "0.7"
-reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls", "stream"] }
+reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls", "stream", "multipart"] }
+futures = "0.3"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tower = "0.4"
@@ -70,3 +71,11 @@ path = "src/derive_macros_detailed.rs"
 [[bin]]
 name = "anyhow_detailed"
 path = "src/anyhow_detailed.rs"
+
+[[bin]]
+name = "reqwest_detailed"
+path = "src/reqwest_detailed.rs"
+
+[[bin]]
+name = "axum_detailed"
+path = "src/axum_detailed.rs"
