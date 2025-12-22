@@ -46,3 +46,7 @@ path = "src/arc_vs_mutex.rs"
 [[bin]]
 name = "derive_and_string"
 path = "src/derive_and_string.rs"
+
+[[bin]]
+name = "impl_detailed"
+path = "src/impl_detailed.rs"
