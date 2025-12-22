@@ -50,3 +50,7 @@ path = "src/derive_and_string.rs"
 [[bin]]
 name = "impl_detailed"
 path = "src/impl_detailed.rs"
+
+[[bin]]
+name = "ok_methods_comparison"
+path = "src/ok_methods_comparison.rs"
