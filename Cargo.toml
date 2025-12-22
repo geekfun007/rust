@@ -62,3 +62,7 @@ path = "src/trait_detailed.rs"
 [[bin]]
 name = "map_detailed"
 path = "src/map_detailed.rs"
+
+[[bin]]
+name = "derive_macros_detailed"
+path = "src/derive_macros_detailed.rs"

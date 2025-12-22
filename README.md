@@ -10,6 +10,7 @@
 - [HTTP 服务器](#4-http-服务器)
 - [文件系统操作](#5-文件系统操作)
 - [Arc vs Mutex](#6-arc-vs-mutex)
+- [Derive 宏详解](#7-derive-宏详解)
 - [快速开始](#快速开始)
 - [项目结构](#项目结构)
 
@@ -651,6 +652,357 @@ cargo run --bin arc_vs_mutex
 
 ---
 
+## 7. Derive 宏详解
+
+**文件**: `src/derive_macros_detailed.rs` | **详细文档**: `DERIVE_GUIDE.md`
+
+全面深入的 Rust Derive 宏教程，涵盖所有常用派生宏的使用和最佳实践。
+
+### 什么是 Derive
+
+Derive 宏是 Rust 提供的自动生成 trait 实现的机制，可以大幅减少样板代码。
+
+```rust
+// 使用 derive 一行搞定
+#[derive(Debug, Clone, PartialEq)]
+struct Point {
+    x: i32,
+    y: i32,
+}
+
+// 等价于手动实现约 30+ 行代码
+```
+
+### 常用 Derive 宏
+
+| Derive | 用途 | 示例 |
+|--------|------|------|
+| **Debug** | 调试输出 `{:?}` | `println!("{:?}", value)` |
+| **Clone** | 深拷贝 | `let copy = value.clone()` |
+| **Copy** | 自动按位复制 | `let b = a; // a 仍有效` |
+| **PartialEq** | 相等比较 `==` | `if a == b { ... }` |
+| **Eq** | 完全相等 | 用于 HashMap |
+| **PartialOrd** | 大小比较 `<`, `>` | `if a < b { ... }` |
+| **Ord** | 完全排序 | `vec.sort()` |
+| **Hash** | 哈希计算 | HashMap 键 |
+| **Default** | 默认值 | `T::default()` |
+
+### 核心概念
+
+#### 1. Debug - 调试必备
+
+```rust
+#[derive(Debug)]
+struct User {
+    id: u32,
+    name: String,
+}
+
+let user = User { id: 1, name: "Alice".to_string() };
+println!("{:?}", user);    // User { id: 1, name: "Alice" }
+println!("{:#?}", user);   // 格式化输出
+```
+
+#### 2. Clone vs Copy
+
+```rust
+// Clone: 显式深拷贝，允许堆分配
+#[derive(Debug, Clone)]
+struct Person {
+    name: String,  // 堆分配
+}
+
+let p1 = Person { name: "Bob".to_string() };
+let p2 = p1.clone();  // 显式调用
+
+// Copy: 自动复制，仅栈上数据
+#[derive(Debug, Clone, Copy)]
+struct Point {
+    x: i32,  // 仅栈数据
+    y: i32,
+}
+
+let p1 = Point { x: 1, y: 2 };
+let p2 = p1;  // 自动复制，p1 仍有效
+```
+
+| 特性 | Clone | Copy |
+|------|-------|------|
+| 调用方式 | 显式 `.clone()` | 自动 |
+| 堆分配 | ✅ 允许 | ❌ 不允许 |
+| 开销 | 可能大 | 小（按位） |
+
+#### 3. PartialEq 和 Eq
+
+```rust
+#[derive(PartialEq, Eq)]
+struct Id(u32);
+
+assert!(Id(1) == Id(1));
+assert!(Id(1) != Id(2));
+```
+
+**区别**:
+- `PartialEq`: 部分相等（如 `f64`，`NaN != NaN`）
+- `Eq`: 完全相等（保证 `a == a`）
+
+#### 4. 排序相关
+
+```rust
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+struct Priority {
+    level: u32,
+    name: String,
+}
+
+let mut items = vec![
+    Priority { level: 2, name: "B".to_string() },
+    Priority { level: 1, name: "A".to_string() },
+];
+
+items.sort();  // 按 level 排序，再按 name
+```
+
+#### 5. Hash - HashMap 键
+
+```rust
+use std::collections::HashMap;
+
+#[derive(Debug, PartialEq, Eq, Hash)]
+struct ProductId {
+    category: String,
+    sku: u32,
+}
+
+let mut map = HashMap::new();
+map.insert(
+    ProductId { 
+        category: "Books".to_string(), 
+        sku: 123 
+    },
+    "Rust 编程"
+);
+```
+
+**要求**: 必须同时实现 `Eq`
+
+#### 6. Default - 默认值
+
+```rust
+#[derive(Debug, Default)]
+struct Config {
+    host: String,       // ""
+    port: u16,          // 0
+    debug: bool,        // false
+}
+
+let config = Config::default();
+
+// 结构体更新语法
+let custom = Config {
+    port: 8080,
+    ..Default::default()
+};
+```
+
+### 常用组合模式
+
+#### 基础组合（最常用）
+```rust
+#[derive(Debug, Clone, PartialEq)]
+struct MyStruct { ... }
+```
+适用于 90% 的结构体
+
+#### 可排序类型
+```rust
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+struct Sortable { ... }
+```
+
+#### HashMap 键
+```rust
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+struct Key { ... }
+```
+
+#### 简单值类型（Copy）
+```rust
+#[derive(Debug, Clone, Copy, PartialEq)]
+struct Point { x: i32, y: i32 }
+```
+
+#### 配置类型
+```rust
+#[derive(Debug, Clone, PartialEq, Default)]
+struct AppConfig { ... }
+```
+
+### 手动实现 vs Derive
+
+**何时手动实现**：
+
+```rust
+// 示例：忽略时间戳的相等比较
+#[derive(Debug)]
+struct Record {
+    id: u32,
+    data: String,
+    timestamp: u64,
+}
+
+impl PartialEq for Record {
+    fn eq(&self, other: &Self) -> bool {
+        // 只比较 id 和 data，忽略 timestamp
+        self.id == other.id && self.data == other.data
+    }
+}
+```
+
+**适用场景**：
+- ✅ 自定义行为
+- ✅ 忽略某些字段
+- ✅ 性能优化
+- ✅ 特殊逻辑（如大小写不敏感比较）
+
+### Derive 依赖关系
+
+```
+Ord      → 需要 Eq + PartialOrd
+Eq       → 需要 PartialEq
+Copy     → 需要 Clone
+Hash     → 通常需要 Eq
+```
+
+### 最佳实践
+
+1. **总是 derive Debug**
+   ```rust
+   #[derive(Debug)]  // 几乎所有类型都应该有
+   struct MyType { ... }
+   ```
+
+2. **Copy 仅用于小型栈值**
+   ```rust
+   // ✅ 好
+   #[derive(Copy, Clone)]
+   struct Point { x: i32, y: i32 }
+   
+   // ❌ 坏 - 包含堆分配
+   #[derive(Copy, Clone)]  // 编译错误！
+   struct User { name: String }
+   ```
+
+3. **遵循标准顺序**
+   ```rust
+   #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+   ```
+
+4. **枚举也可以 derive**
+   ```rust
+   #[derive(Debug, Clone, PartialEq)]
+   enum Status {
+       Pending,
+       Active { id: u32 },
+       Completed,
+   }
+   ```
+
+### 实战案例
+
+#### API 数据模型
+```rust
+#[derive(Debug, Clone, PartialEq)]
+struct User {
+    id: u32,
+    username: String,
+    email: String,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+struct ApiResponse<T> {
+    success: bool,
+    data: Option<T>,
+    error: Option<String>,
+}
+```
+
+#### 游戏实体
+```rust
+#[derive(Debug, Clone, Copy, PartialEq)]
+struct Position { x: f32, y: f32 }
+
+#[derive(Debug, Clone, PartialEq)]
+struct Entity {
+    id: u32,
+    name: String,
+    position: Position,
+    health: u32,
+}
+```
+
+#### 配置系统
+```rust
+#[derive(Debug, Clone, PartialEq, Default)]
+struct DatabaseConfig {
+    host: String,
+    port: u16,
+    max_connections: usize,
+}
+
+#[derive(Debug, Clone, PartialEq, Default)]
+struct AppConfig {
+    database: DatabaseConfig,
+    debug_mode: bool,
+}
+
+let config = AppConfig::default();
+```
+
+### 决策树
+
+```
+需要调试？ → derive(Debug)
+需要复制？
+  ├─ 有堆分配？ → derive(Clone)
+  └─ 无堆分配？ → derive(Clone, Copy)
+需要比较？ → derive(PartialEq)
+  └─ 自反性？ → derive(Eq)
+需要排序？ → derive(PartialOrd, Ord)
+HashMap键？ → derive(Hash, Eq, PartialEq)
+需要默认值？ → derive(Default)
+```
+
+### 常见问题
+
+**Q: Copy 和 Clone 的区别？**
+- Copy: 自动复制，仅栈数据，开销小
+- Clone: 显式 `.clone()`，可含堆数据，开销可能大
+
+**Q: 为什么 Ord 需要 Eq？**
+- 完全排序要求：如果 `a <= b` 且 `b <= a`，则 `a == b`
+
+**Q: 什么时候不应该 derive？**
+- 需要自定义逻辑
+- 忽略某些字段
+- 性能优化
+- 保护敏感信息
+
+**Q: Derive 的性能如何？**
+- 编译时零开销
+- 生成代码与手写相当
+- Debug 输出可能较慢（字符串格式化）
+
+### 运行示例
+
+```bash
+cargo run --bin derive_macros_detailed
+```
+
+**查看详细文档**: [DERIVE_GUIDE.md](./DERIVE_GUIDE.md)
+
+---
+
 ## 快速开始
 
 ### 环境要求
@@ -702,6 +1054,12 @@ cargo run --bin http_server
 
 # 运行文件操作示例
 cargo run --bin file_operations
+
+# 运行 Arc vs Mutex 示例
+cargo run --bin arc_vs_mutex
+
+# 运行 Derive 宏示例
+cargo run --bin derive_macros_detailed
 ```
 
 ### 检查代码
@@ -726,14 +1084,18 @@ cargo clippy
 
 ```
 rust-core-concepts/
-├── Cargo.toml                 # 项目配置和依赖
-├── README.md                  # 本文件
+├── Cargo.toml                      # 项目配置和依赖
+├── README.md                       # 本文件
+├── ARC_VS_MUTEX.md                 # Arc vs Mutex 详细文档
+├── DERIVE_GUIDE.md                 # Derive 宏完全指南
 └── src/
-    ├── conversions.rs         # 类型转换详解
-    ├── error_handling.rs      # 错误处理详解
-    ├── http_client.rs         # HTTP 客户端示例
-    ├── http_server.rs         # HTTP 服务器示例
-    └── file_operations.rs     # 文件系统操作
+    ├── conversions.rs              # 类型转换详解
+    ├── error_handling.rs           # 错误处理详解
+    ├── http_client.rs              # HTTP 客户端示例
+    ├── http_server.rs              # HTTP 服务器示例
+    ├── file_operations.rs          # 文件系统操作
+    ├── arc_vs_mutex.rs             # Arc vs Mutex 详解
+    └── derive_macros_detailed.rs   # Derive 宏详解
 ```
 
 ---
