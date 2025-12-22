@@ -58,3 +58,7 @@ path = "src/ok_methods_comparison.rs"
 [[bin]]
 name = "trait_detailed"
 path = "src/trait_detailed.rs"
+
+[[bin]]
+name = "map_detailed"
+path = "src/map_detailed.rs"
