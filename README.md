@@ -9,6 +9,7 @@
 - [HTTP 客户端](#3-http-客户端)
 - [HTTP 服务器](#4-http-服务器)
 - [文件系统操作](#5-文件系统操作)
+- [Arc vs Mutex](#6-arc-vs-mutex)
 - [快速开始](#快速开始)
 - [项目结构](#项目结构)
 
@@ -551,6 +552,102 @@ path.set_extension("txt");
 ```bash
 cargo run --bin file_operations
 ```
+
+---
+
+## 6. Arc vs Mutex
+
+**文件**: `src/arc_vs_mutex.rs` | **详细文档**: `ARC_VS_MUTEX.md`
+
+深入理解 Rust 并发编程中最核心的两个概念。
+
+### 核心区别
+
+#### Arc (Atomic Reference Counted)
+- **作用**: 允许多个所有者共享同一份数据
+- **解决**: 所有权问题
+- **数据可变**: ❌ 否（只读）
+- **适用**: 跨线程共享不可变数据
+
+```rust
+let data = Arc::new(vec![1, 2, 3]);
+let data_clone = Arc::clone(&data); // 引用计数 +1
+// 多个线程可以同时读取
+```
+
+#### Mutex (Mutual Exclusion)
+- **作用**: 保护数据，同一时刻只有一个线程可以访问
+- **解决**: 数据竞争问题
+- **数据可变**: ✅ 是（内部可变性）
+- **适用**: 需要修改的共享数据
+
+```rust
+let data = Mutex::new(0);
+let mut num = data.lock().unwrap();
+*num += 1; // 可以修改
+```
+
+### 常见组合模式
+
+```rust
+// 1. Arc<T> - 多线程只读
+let config = Arc::new(Config { ... });
+
+// 2. Mutex<T> - 单线程/单所有者可变
+let buffer = Mutex::new(Vec::new());
+
+// 3. Arc<Mutex<T>> - 多线程可变（最常见）
+let counter = Arc::new(Mutex::new(0));
+
+// 4. Arc<RwLock<T>> - 读多写少
+let cache = Arc::new(RwLock::new(HashMap::new()));
+
+// 5. Arc<AtomicXxx> - 简单类型高性能
+let flag = Arc::new(AtomicBool::new(false));
+```
+
+### 选择指南
+
+| 场景 | 方案 | 原因 |
+|------|------|------|
+| 多线程只读 | `Arc<T>` | 无锁，性能最好 |
+| 多线程可变 | `Arc<Mutex<T>>` | 标准方案 |
+| 读多写少 | `Arc<RwLock<T>>` | 读操作可并发 |
+| 简单计数器 | `Arc<AtomicUsize>` | 无锁，最快 |
+| 单线程可变 | `Mutex<T>` | 不需要 Arc |
+
+### 常见陷阱
+
+```rust
+// ❌ 忘记释放锁（死锁）
+let guard = data.lock().unwrap();
+let guard2 = data.lock().unwrap(); // 死锁！
+
+// ✅ 使用作用域自动释放
+{
+    let guard = data.lock().unwrap();
+    // 使用数据
+} // guard 自动 drop
+
+// ❌ 锁内耗时操作
+let mut data = counter.lock().unwrap();
+expensive_operation(); // 锁被长时间持有
+
+// ✅ 快速进出锁
+{
+    let mut data = counter.lock().unwrap();
+    *data += 1;
+} // 先释放锁
+expensive_operation(); // 在锁外执行
+```
+
+### 运行示例
+
+```bash
+cargo run --bin arc_vs_mutex
+```
+
+**查看详细文档**: [ARC_VS_MUTEX.md](./ARC_VS_MUTEX.md)
 
 ---
 

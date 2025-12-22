@@ -38,3 +38,7 @@ path = "src/http_server.rs"
 [[bin]]
 name = "file_operations"
 path = "src/file_operations.rs"
+
+[[bin]]
+name = "arc_vs_mutex"
+path = "src/arc_vs_mutex.rs"
