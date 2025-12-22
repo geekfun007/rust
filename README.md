@@ -11,6 +11,7 @@
 - [文件系统操作](#5-文件系统操作)
 - [Arc vs Mutex](#6-arc-vs-mutex)
 - [Derive 宏详解](#7-derive-宏详解)
+- [Anyhow 错误处理](#8-anyhow-错误处理)
 - [快速开始](#快速开始)
 - [项目结构](#项目结构)
 
@@ -1003,6 +1004,403 @@ cargo run --bin derive_macros_detailed
 
 ---
 
+## 8. Anyhow 错误处理
+
+**文件**: `src/anyhow_detailed.rs` | **详细文档**: `ANYHOW_GUIDE.md`
+
+深入探索 Rust 生态中最流行的应用层错误处理库 - Anyhow。
+
+### 什么是 Anyhow
+
+Anyhow 是一个专为**应用程序**设计的错误处理库，极大地简化了错误处理代码。
+
+```rust
+// 传统方式
+fn traditional() -> Result<String, Box<dyn std::error::Error>> {
+    let content = fs::read_to_string("file.txt")?;
+    let num: i32 = content.parse()?;
+    Ok(format!("{}", num))
+}
+
+// Anyhow - 简洁统一
+use anyhow::Result;
+
+fn with_anyhow() -> Result<String> {
+    let content = fs::read_to_string("file.txt")?;
+    let num: i32 = content.parse()?;
+    Ok(format!("{}", num))
+}
+```
+
+### 核心优势
+
+| 特性 | 说明 |
+|------|------|
+| **统一错误类型** | `anyhow::Error` 可包装任何错误 |
+| **自动转换** | 任何 `impl Error` 的类型自动转换 |
+| **丰富上下文** | 轻松添加错误发生的背景信息 |
+| **错误链** | 追踪错误的完整传播路径 |
+| **零成本** | 成功路径无运行时开销 |
+
+### 核心 API
+
+#### 1. Result<T> - 简化的结果类型
+
+```rust
+use anyhow::Result;
+
+// 简化前
+fn old_way() -> Result<String, Box<dyn std::error::Error>> {
+    // ...
+}
+
+// 简化后
+fn new_way() -> Result<String> {
+    // 所有错误自动转换为 anyhow::Error
+    let content = fs::read_to_string("file.txt")?;
+    let num: i32 = content.parse()?;
+    Ok(format!("{}", num))
+}
+```
+
+#### 2. bail! - 立即返回错误
+
+```rust
+use anyhow::{bail, Result};
+
+fn validate_age(age: i32) -> Result<()> {
+    if age < 0 {
+        bail!("年龄不能为负数");
+    }
+    if age > 150 {
+        bail!("年龄 {} 超出合理范围", age);
+    }
+    Ok(())
+}
+```
+
+#### 3. ensure! - 条件断言
+
+```rust
+use anyhow::{ensure, Result};
+
+fn divide(a: f64, b: f64) -> Result<f64> {
+    ensure!(b != 0.0, "除数不能为零");
+    Ok(a / b)
+}
+
+fn validate_username(name: &str) -> Result<()> {
+    ensure!(!name.is_empty(), "用户名不能为空");
+    ensure!(name.len() >= 3, "用户名至少 3 个字符");
+    ensure!(name.len() <= 20, "用户名最多 20 个字符");
+    Ok(())
+}
+```
+
+#### 4. Context - 添加错误上下文
+
+```rust
+use anyhow::{Context, Result};
+
+// ❌ 不好 - 错误信息模糊
+fn bad() -> Result<Config> {
+    let content = fs::read_to_string("config.toml")?;
+    let config: Config = toml::from_str(&content)?;
+    Ok(config)
+}
+// 错误: No such file or directory
+
+// ✅ 好 - 清晰的错误上下文
+fn good() -> Result<Config> {
+    let content = fs::read_to_string("config.toml")
+        .context("Failed to read config file")?;
+    
+    let config: Config = toml::from_str(&content)
+        .context("Failed to parse config")?;
+    
+    Ok(config)
+}
+// 错误: Failed to read config file: No such file or directory
+```
+
+### context() vs with_context()
+
+| 方法 | 求值 | 性能 | 适用场景 |
+|------|------|------|----------|
+| `context()` | 立即 | 总是分配 | 静态字符串 |
+| `with_context()` | 惰性 | 仅错误时分配 | 动态消息 |
+
+```rust
+// context - 立即求值
+.context("Static message")
+
+// with_context - 惰性求值（推荐）
+.with_context(|| format!("Dynamic: {}", variable))
+```
+
+### 错误链
+
+多层 `context` 形成错误链，完整记录错误传播路径：
+
+```rust
+use anyhow::{Context, Result};
+
+fn level_3() -> Result<()> {
+    fs::read_to_string("missing.txt")
+        .context("Level 3: File read failed")?;
+    Ok(())
+}
+
+fn level_2() -> Result<()> {
+    level_3().context("Level 2: Config loading failed")?;
+    Ok(())
+}
+
+fn level_1() -> Result<()> {
+    level_2().context("Level 1: App initialization failed")?;
+    Ok(())
+}
+
+fn main() {
+    if let Err(e) = level_1() {
+        eprintln!("Error: {}", e);
+        
+        // 打印完整错误链
+        for (i, cause) in e.chain().enumerate() {
+            eprintln!("  {}: {}", i, cause);
+        }
+    }
+}
+```
+
+**输出**：
+```
+Error: Level 1: App initialization failed
+
+Caused by:
+    0: Level 1: App initialization failed
+    1: Level 2: Config loading failed
+    2: Level 3: File read failed
+    3: No such file or directory (os error 2)
+```
+
+### 实战案例
+
+#### 案例 1: 配置文件加载
+
+```rust
+use anyhow::{Context, Result, ensure};
+
+fn load_config(path: &str) -> Result<Config> {
+    let content = fs::read_to_string(path)
+        .with_context(|| format!("Failed to read: {}", path))?;
+    
+    let mut host = None;
+    let mut port = None;
+    
+    for (line_num, line) in content.lines().enumerate() {
+        let parts: Vec<&str> = line.split('=').collect();
+        ensure!(
+            parts.len() == 2,
+            "Invalid format at line {}: {}",
+            line_num + 1,
+            line
+        );
+        
+        match parts[0].trim() {
+            "host" => host = Some(parts[1].trim().to_string()),
+            "port" => {
+                port = Some(parts[1].trim().parse()
+                    .with_context(|| format!("Invalid port at line {}", line_num + 1))?);
+            }
+            _ => bail!("Unknown key: {}", parts[0]),
+        }
+    }
+    
+    let host = host.context("Missing required field: host")?;
+    let port = port.context("Missing required field: port")?;
+    
+    Ok(Config { host, port })
+}
+```
+
+#### 案例 2: CLI 工具
+
+```rust
+use anyhow::{bail, ensure, Result};
+
+fn main() -> Result<()> {
+    let args: Vec<String> = env::args().collect();
+    ensure!(args.len() >= 2, "Usage: {} <command>", args[0]);
+    
+    match args[1].as_str() {
+        "add" => cmd_add(&args[2..])?,
+        "div" => cmd_div(&args[2..])?,
+        _ => bail!("Unknown command: {}", args[1]),
+    }
+    
+    Ok(())
+}
+
+fn cmd_div(args: &[String]) -> Result<()> {
+    ensure!(args.len() == 2, "div requires 2 arguments");
+    
+    let a: f64 = args[0].parse()
+        .context("First arg must be a number")?;
+    let b: f64 = args[1].parse()
+        .context("Second arg must be a number")?;
+    
+    ensure!(b != 0.0, "Division by zero");
+    
+    println!("Result: {}", a / b);
+    Ok(())
+}
+```
+
+#### 案例 3: 数据处理管道
+
+```rust
+use anyhow::{Context, Result, ensure};
+
+fn parse_csv_line(line: &str, line_num: usize) -> Result<Record> {
+    let parts: Vec<&str> = line.split(',').collect();
+    
+    ensure!(
+        parts.len() == 3,
+        "Line {}: expected 3 columns, got {}",
+        line_num,
+        parts.len()
+    );
+    
+    let id: u32 = parts[0].trim().parse()
+        .with_context(|| format!("Line {}: invalid ID", line_num))?;
+    
+    let score: f64 = parts[2].trim().parse()
+        .with_context(|| format!("Line {}: invalid score", line_num))?;
+    
+    ensure!(
+        (0.0..=100.0).contains(&score),
+        "Line {}: score {} out of range",
+        line_num,
+        score
+    );
+    
+    Ok(Record { id, score })
+}
+```
+
+### Anyhow vs Thiserror
+
+| 特性 | Anyhow | Thiserror |
+|------|--------|-----------|
+| **用途** | 应用程序 | 库 |
+| **错误类型** | 统一 (`anyhow::Error`) | 自定义枚举 |
+| **类型匹配** | ❌ 不支持 | ✅ 支持 |
+| **上下文** | ✅ 内置 | 需手动 |
+| **公共 API** | ❌ 不推荐 | ✅ 推荐 |
+
+**选择指南**：
+- **应用程序**（CLI、服务器） → 使用 `anyhow`
+- **库**（供他人使用） → 使用 `thiserror`
+
+### 最佳实践
+
+#### 1. 总是添加 context
+
+```rust
+// ❌ 不好
+let content = fs::read_to_string(path)?;
+
+// ✅ 好
+let content = fs::read_to_string(path)
+    .context("Failed to read file")?;
+```
+
+#### 2. 使用 with_context 添加动态信息
+
+```rust
+// ❌ 总是分配
+.context(format!("File: {}", path))
+
+// ✅ 仅错误时分配
+.with_context(|| format!("File: {}", path))
+```
+
+#### 3. 优先使用 ensure!
+
+```rust
+// ❌ 冗长
+if x <= 0 {
+    bail!("x must be positive");
+}
+
+// ✅ 简洁
+ensure!(x > 0, "x must be positive");
+```
+
+#### 4. main 返回 Result
+
+```rust
+use anyhow::Result;
+
+fn main() -> Result<()> {
+    // 错误自动打印到 stderr
+    run_app()?;
+    Ok(())
+}
+```
+
+#### 5. 构建清晰的错误链
+
+```rust
+fn process() -> Result<()> {
+    load_data()
+        .context("Failed to load data")?;
+    
+    validate()
+        .context("Validation failed")?;
+    
+    save()
+        .context("Failed to save")?;
+    
+    Ok(())
+}
+```
+
+### 核心概念总结
+
+```rust
+use anyhow::{anyhow, bail, ensure, Context, Result};
+
+// Result<T> - 简化的结果类型
+fn my_fn() -> Result<T> { /* ... */ }
+
+// bail! - 立即返回错误
+bail!("error message");
+
+// ensure! - 条件断言
+ensure!(condition, "error if false");
+
+// anyhow! - 创建错误对象
+let err = anyhow!("error message");
+
+// context - 添加上下文（静态）
+operation().context("Failed")?;
+
+// with_context - 添加上下文（动态）
+operation().with_context(|| format!("Failed: {}", x))?;
+```
+
+### 运行示例
+
+```bash
+cargo run --bin anyhow_detailed
+```
+
+**查看详细文档**: [ANYHOW_GUIDE.md](./ANYHOW_GUIDE.md)
+
+---
+
 ## 快速开始
 
 ### 环境要求
@@ -1060,6 +1458,9 @@ cargo run --bin arc_vs_mutex
 
 # 运行 Derive 宏示例
 cargo run --bin derive_macros_detailed
+
+# 运行 Anyhow 示例
+cargo run --bin anyhow_detailed
 ```
 
 ### 检查代码
@@ -1088,6 +1489,7 @@ rust-core-concepts/
 ├── README.md                       # 本文件
 ├── ARC_VS_MUTEX.md                 # Arc vs Mutex 详细文档
 ├── DERIVE_GUIDE.md                 # Derive 宏完全指南
+├── ANYHOW_GUIDE.md                 # Anyhow 错误处理完全指南
 └── src/
     ├── conversions.rs              # 类型转换详解
     ├── error_handling.rs           # 错误处理详解
@@ -1095,7 +1497,8 @@ rust-core-concepts/
     ├── http_server.rs              # HTTP 服务器示例
     ├── file_operations.rs          # 文件系统操作
     ├── arc_vs_mutex.rs             # Arc vs Mutex 详解
-    └── derive_macros_detailed.rs   # Derive 宏详解
+    ├── derive_macros_detailed.rs   # Derive 宏详解
+    └── anyhow_detailed.rs          # Anyhow 错误处理详解
 ```
 
 ---
