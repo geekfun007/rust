@@ -1,0 +1,105 @@
+[package]
+name = "rust-core-concepts"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# HTTP client/server
+tokio = { version = "1.35", features = ["full"] }
+axum = "0.7"
+reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls", "stream", "multipart"] }
+futures = "0.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors", "trace"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+[[bin]]
+name = "conversions"
+path = "src/conversions.rs"
+
+[[bin]]
+name = "error_handling"
+path = "src/error_handling.rs"
+
+[[bin]]
+name = "http_client"
+path = "src/http_client.rs"
+
+[[bin]]
+name = "http_server"
+path = "src/http_server.rs"
+
+[[bin]]
+name = "file_operations"
+path = "src/file_operations.rs"
+
+[[bin]]
+name = "arc_vs_mutex"
+path = "src/arc_vs_mutex.rs"
+
+[[bin]]
+name = "derive_and_string"
+path = "src/derive_and_string.rs"
+
+[[bin]]
+name = "impl_detailed"
+path = "src/impl_detailed.rs"
+
+[[bin]]
+name = "ok_methods_comparison"
+path = "src/ok_methods_comparison.rs"
+
+[[bin]]
+name = "trait_detailed"
+path = "src/trait_detailed.rs"
+
+[[bin]]
+name = "map_detailed"
+path = "src/map_detailed.rs"
+
+[[bin]]
+name = "derive_macros_detailed"
+path = "src/derive_macros_detailed.rs"
+
+[[bin]]
+name = "anyhow_detailed"
+path = "src/anyhow_detailed.rs"
+
+[[bin]]
+name = "reqwest_detailed"
+path = "src/reqwest_detailed.rs"
+
+[[bin]]
+name = "axum_detailed"
+path = "src/axum_detailed.rs"
+
+[[bin]]
+name = "thiserror_detailed"
+path = "src/thiserror_detailed.rs"
+
+[[bin]]
+name = "mod_detailed"
+path = "src/mod_detailed.rs"
+
+[[bin]]
+name = "middleware_detailed"
+path = "src/middleware_detailed.rs"
+
+[[bin]]
+name = "into_conversions_detailed"
+path = "src/into_conversions_detailed.rs"
+
+[[bin]]
+name = "to_conversions_detailed"
+path = "src/to_conversions_detailed.rs"
+
+[[bin]]
+name = "string_vs_str_detailed"
+path = "src/string_vs_str_detailed.rs"
