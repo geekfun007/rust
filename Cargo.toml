@@ -87,3 +87,11 @@ path = "src/thiserror_detailed.rs"
 [[bin]]
 name = "mod_detailed"
 path = "src/mod_detailed.rs"
+
+[[bin]]
+name = "middleware_detailed"
+path = "src/middleware_detailed.rs"
+
+[[bin]]
+name = "into_conversions_detailed"
+path = "src/into_conversions_detailed.rs"
