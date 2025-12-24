@@ -83,3 +83,7 @@ path = "src/axum_detailed.rs"
 [[bin]]
 name = "thiserror_detailed"
 path = "src/thiserror_detailed.rs"
+
+[[bin]]
+name = "mod_detailed"
+path = "src/mod_detailed.rs"
