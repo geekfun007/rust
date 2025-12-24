@@ -99,3 +99,7 @@ path = "src/into_conversions_detailed.rs"
 [[bin]]
 name = "to_conversions_detailed"
 path = "src/to_conversions_detailed.rs"
+
+[[bin]]
+name = "string_vs_str_detailed"
+path = "src/string_vs_str_detailed.rs"
