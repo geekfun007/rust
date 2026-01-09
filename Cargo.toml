@@ -1,0 +1,7 @@
+[workspace]
+resolver = "2"
+members = [
+  "crates/thrift-ts-gen",
+  "crates/pyo3-demo",
+]
+
