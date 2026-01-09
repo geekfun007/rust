@@ -1,0 +1,20 @@
+[package]
+name = "thrift-to-ts"
+version = "0.1.0"
+edition = "2021"
+description = "A CLI tool to parse Thrift IDL files and generate TypeScript type definitions"
+authors = ["Your Name <your.email@example.com>"]
+license = "MIT"
+
+[dependencies]
+# CLI 参数解析
+clap = { version = "4.4", features = ["derive"] }
+# 错误处理
+anyhow = "1.0"
+thiserror = "1.0"
+# 文件系统操作
+walkdir = "2.4"
+
+[[bin]]
+name = "thrift-to-ts"
+path = "src/main.rs"

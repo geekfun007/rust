@@ -1,0 +1,32 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "py_rust_module"
+version = "0.1.0"
+description = "A Python module written in Rust using PyO3"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Rust",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+keywords = ["rust", "python", "pyo3", "extension"]
+
+[project.optional-dependencies]
+dev = ["pytest", "numpy"]
+
+[tool.maturin]
+# Python 模块名
+module-name = "py_rust_module"
+# 构建选项
+features = ["pyo3/extension-module"]

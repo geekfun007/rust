@@ -1,0 +1,1 @@
+/workspace/thrift-to-ts/target/release/thrift-to-ts: /workspace/thrift-to-ts/src/ast.rs /workspace/thrift-to-ts/src/codegen.rs /workspace/thrift-to-ts/src/lexer.rs /workspace/thrift-to-ts/src/main.rs /workspace/thrift-to-ts/src/parser.rs
