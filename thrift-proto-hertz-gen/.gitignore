@@ -1,0 +1,21 @@
+# Build artifacts
+/target/
+Cargo.lock
+
+# Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Generated output (example runs)
+/output/
+/gen/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test coverage
+*.profraw
+*.profdata
