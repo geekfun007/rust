@@ -1,0 +1,127 @@
+syntax = "proto3";
+
+package example.product;
+
+option go_package = "example/product";
+
+// Product entity
+message Product {
+    int64 id = 1;
+    string name = 2;
+    string description = 3;
+    double price = 4;
+    int32 stock = 5;
+    ProductStatus status = 6;
+    repeated string tags = 7;
+    int64 created_at = 8;
+    int64 updated_at = 9;
+}
+
+// Product status
+enum ProductStatus {
+    PRODUCT_STATUS_UNKNOWN = 0;
+    PRODUCT_STATUS_AVAILABLE = 1;
+    PRODUCT_STATUS_OUT_OF_STOCK = 2;
+    PRODUCT_STATUS_DISCONTINUED = 3;
+}
+
+// Get product request
+message GetProductRequest {
+    int64 id = 1;
+}
+
+// Get product response
+message GetProductResponse {
+    int32 code = 1;
+    string message = 2;
+    Product product = 3;
+}
+
+// Create product request
+message CreateProductRequest {
+    string name = 1;
+    string description = 2;
+    double price = 3;
+    int32 stock = 4;
+    repeated string tags = 5;
+}
+
+// Create product response
+message CreateProductResponse {
+    int32 code = 1;
+    string message = 2;
+    Product product = 3;
+}
+
+// Update product request
+message UpdateProductRequest {
+    int64 id = 1;
+    string name = 2;
+    string description = 3;
+    double price = 4;
+    int32 stock = 5;
+    ProductStatus status = 6;
+    repeated string tags = 7;
+}
+
+// Update product response
+message UpdateProductResponse {
+    int32 code = 1;
+    string message = 2;
+    Product product = 3;
+}
+
+// Delete product request
+message DeleteProductRequest {
+    int64 id = 1;
+}
+
+// Delete product response
+message DeleteProductResponse {
+    int32 code = 1;
+    string message = 2;
+}
+
+// List products request
+message ListProductsRequest {
+    int32 page = 1;
+    int32 page_size = 2;
+    ProductStatus status = 3;
+    string search = 4;
+}
+
+// List products response
+message ListProductsResponse {
+    int32 code = 1;
+    string message = 2;
+    repeated Product products = 3;
+    int32 total = 4;
+}
+
+// Product service
+service ProductService {
+    // Get a single product by ID
+    rpc GetProduct(GetProductRequest) returns (GetProductResponse) {
+        option (api.get) = "/api/v1/products/:id";
+    }
+    
+    // Create a new product
+    rpc CreateProduct(CreateProductRequest) returns (CreateProductResponse) {
+        option (api.post) = "/api/v1/products";
+    }
+    
+    // Update an existing product
+    rpc UpdateProduct(UpdateProductRequest) returns (UpdateProductResponse) {
+        option (api.put) = "/api/v1/products/:id";
+    }
+    
+    // Delete a product
+    rpc DeleteProduct(DeleteProductRequest) returns (DeleteProductResponse) {
+        option (api.delete) = "/api/v1/products/:id";
+    }
+    
+    // List products with filtering
+    rpc ListProducts(ListProductsRequest) returns (ListProductsResponse) {
+        option (api.get) = "/api/v1/products";
+    }
+}
